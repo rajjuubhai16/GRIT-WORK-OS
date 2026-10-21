@@ -2125,6 +2125,8 @@ def init_session_state():
         st.session_state.current_view = "Dashboard & Leaderboard"
     if "show_checkout_modal" not in st.session_state:
         st.session_state.show_checkout_modal = False
+    if "admin_original_user" not in st.session_state:
+        st.session_state.admin_original_user = None
 
 def login_user(user_dict):
     """Sets authenticated state."""
@@ -2137,13 +2139,14 @@ def logout_user():
     st.session_state.authenticated = False
     st.session_state.user = None
     st.session_state.show_checkout_modal = False
+    st.session_state.pop("admin_original_user", None)
     st.rerun()
 
 # -----------------------------------------------------------------------------
 # Sub-View: Authentication Screen (Clean Real Users)
 # -----------------------------------------------------------------------------
 def render_login_view():
-    """Renders the cyber luxury login portal with instant demo switcher."""
+    """Renders the cyber luxury login portal with secure member authentication."""
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
@@ -2161,52 +2164,24 @@ def render_login_view():
         </div>
         """)
 
-        login_tab, demo_tab = st.tabs(["Team Sign-In", "1-Click Fast Switcher"])
-
-        with login_tab:
-            render_html('<div class="cyber-card">')
-            with st.form("login_form"):
-                all_users = get_all_users()
-                user_options = [u["username"] for u in all_users]
-
-                selected_user = st.selectbox("Select Team Member", user_options)
-                password = st.text_input("Password", type="password", placeholder="Enter your password (default: grit2026)")
-                submitted = st.form_submit_button("Enter GRIT OS", type="primary")
-
-                if submitted:
-                    user_data = verify_user(selected_user, password)
-                    if user_data:
-                        login_user(user_data)
-                        st.success(f"Access Granted. Welcome back, {user_data['name']}!")
-                        st.rerun()
-                    else:
-                        st.error("Invalid credentials. Please verify your password.")
-            render_html('</div>')
-
-        with demo_tab:
-            render_html("""
-            <div class="cyber-card">
-                <p style="color: #94A3B8; font-size: 0.88rem; margin-bottom: 16px;">
-                    Select any team member to enter as their profile:
-                </p>
-            </div>
-            """)
-
+        render_html('<div class="cyber-card">')
+        with st.form("login_form"):
             all_users = get_all_users()
-            for user in all_users:
-                col_btn, col_info = st.columns([1, 2])
-                with col_btn:
-                    if st.button(f"Login as {user['username']}", key=f"quick_login_{user['username']}"):
-                        login_user(user)
-                        st.rerun()
-                with col_info:
-                    role_badge = f'<span class="badge badge-admin">Admin</span>' if user["role"] == "admin" else f'<span class="badge badge-member">Member</span>'
-                    render_html(f"""
-                    <div style="padding-top: 6px;">
-                        {role_badge} <strong style="color:#FFF;">{user['name']}</strong> — <span style="color:#94A3B8; font-size:0.85rem;">{user['title']}</span>
-                    </div>
-                    <hr style='border:0; border-top:1px solid #1E2330; margin:6px 0 12px 0;'>
-                    """)
+            user_options = [u["username"] for u in all_users]
+
+            selected_user = st.selectbox("Select Team Member", user_options)
+            password = st.text_input("Password", type="password", placeholder="Enter your password (default: grit2026)")
+            submitted = st.form_submit_button("Enter GRIT OS", type="primary", use_container_width=True)
+
+            if submitted:
+                user_data = verify_user(selected_user, password)
+                if user_data:
+                    login_user(user_data)
+                    st.success(f"Access Granted. Welcome back, {user_data['name']}!")
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials. Please verify your password.")
+        render_html('</div>')
 
 # -----------------------------------------------------------------------------
 # Module: Sidebar Navigation, Clean Live Timer & Gamified Level Badge
@@ -2325,7 +2300,8 @@ def render_sidebar():
             "Tasks Board",
             "Academics Hub"
         ]
-        if user["role"] == "admin":
+        is_admin_or_impersonating = (user["role"] == "admin") or bool(st.session_state.get("admin_original_user"))
+        if is_admin_or_impersonating:
             nav_options.append("👑 Admin Controls")
 
         current_v = st.session_state.current_view
@@ -2339,6 +2315,28 @@ def render_sidebar():
             label_visibility="collapsed"
         )
         st.session_state.current_view = selected_nav
+
+        if is_admin_or_impersonating:
+            render_html("<div style='margin-top: 14px;'></div>")
+            with st.expander("⚡ 1-Click Fast Switcher (Admin)", expanded=False):
+                st.caption("Admin exclusive: Jump directly into any member's account to inspect progress:")
+                all_u = get_all_users()
+                for u in all_u:
+                    is_current = (u["id"] == user["id"])
+                    btn_label = f"✓ {u['name']} (Active)" if is_current else f"👁️ View as {u['name']}"
+                    if st.button(btn_label, key=f"sb_admin_switch_{u['id']}", disabled=is_current, use_container_width=True):
+                        if not st.session_state.get("admin_original_user") and user["role"] == "admin":
+                            st.session_state.admin_original_user = user
+                        elif st.session_state.get("admin_original_user") and u["id"] == st.session_state["admin_original_user"]["id"]:
+                            st.session_state.pop("admin_original_user", None)
+                        login_user(u)
+                        st.rerun()
+
+                if st.session_state.get("admin_original_user"):
+                    if st.button("⬅️ Return to Rajat (Admin)", key="sb_revert_admin", type="primary", use_container_width=True):
+                        orig = st.session_state.pop("admin_original_user")
+                        login_user(orig)
+                        st.rerun()
 
         render_html("<div style='margin-top: 18px;'></div>")
 
@@ -4126,7 +4124,7 @@ def render_academics_view():
 def render_admin_view():
     """Renders administrative controls restricted to Rajat / Admin role."""
     user = st.session_state.user
-    if user["role"] != "admin":
+    if user["role"] != "admin" and not st.session_state.get("admin_original_user"):
         st.error("Access Restricted: This module requires Lead / Solution Architect authorization.")
         return
 
@@ -4137,11 +4135,12 @@ def render_admin_view():
     </div>
     """)
 
-    tab_members, tab_add_user, tab_skills_admin, tab_reset_pwd, tab_db = st.tabs([
+    tab_members, tab_add_user, tab_skills_admin, tab_reset_pwd, tab_switcher, tab_db = st.tabs([
         "👥 Manage & Edit Team Members", 
         "➕ Register New Member", 
         "🎯 Manage Skills & Roadmaps",
         "🔐 Quick Password Reset", 
+        "⚡ 1-Click Fast Switcher",
         "🗄️ Database Maintenance & Audit"
     ])
 
@@ -4356,6 +4355,39 @@ def render_admin_view():
                     st.success(f"Password for {target_user} successfully reset!")
         render_html('</div>')
 
+    with tab_switcher:
+        st.markdown("### ⚡ 1-Click Member Switcher & Live Impersonation")
+        st.markdown("<p style='color:#94A3B8; font-size:0.9rem;'>As Lead / Admin, you have master access to inspect each team member's personal dashboard, active sprint tasks, and roadmap progress with a single click. <em>(Note: Team members cannot see this switcher or bypass credentials).</em></p>", unsafe_allow_html=True)
+
+        for u in all_users:
+            col_u1, col_u2, col_u3 = st.columns([1, 3, 2])
+            with col_u1:
+                render_html(f"""
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: {u.get('avatar_color', '#00FFA3')}; color: #0A0D13; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; margin-top: 4px;">
+                    {u['username'][:2].upper()}
+                </div>
+                """)
+            with col_u2:
+                role_b = '<span class="badge badge-admin">Admin</span>' if u["role"] == "admin" else '<span class="badge badge-member">Member</span>'
+                render_html(f"""
+                <div>
+                    {role_b} <strong style="color: #FFFFFF; font-size: 1.05rem;">{u['name']}</strong> (@{u['username']})
+                    <div style="color: #94A3B8; font-size: 0.85rem; margin-top: 2px;">{u['title']}</div>
+                </div>
+                """)
+            with col_u3:
+                if u["id"] == user["id"]:
+                    st.button("✓ You are here", key=f"tab_sw_here_{u['id']}", disabled=True, use_container_width=True)
+                else:
+                    if st.button(f"🚀 Jump into {u['username']}", key=f"tab_sw_jump_{u['id']}", type="primary", use_container_width=True):
+                        if not st.session_state.get("admin_original_user") and user["role"] == "admin":
+                            st.session_state.admin_original_user = user
+                        elif st.session_state.get("admin_original_user") and u["id"] == st.session_state["admin_original_user"]["id"]:
+                            st.session_state.pop("admin_original_user", None)
+                        login_user(u)
+                        st.rerun()
+            render_html("<hr style='border:0; border-top:1px solid #1E2330; margin:10px 0 16px 0;'>")
+
     with tab_db:
         st.markdown("### SQLite Audit & Schema Inspection")
         conn = get_db_connection()
@@ -4404,6 +4436,21 @@ def main():
         return
 
     render_sidebar()
+
+    # Admin Impersonation Top Banner
+    if st.session_state.get("admin_original_user"):
+        col_banner, col_ret = st.columns([4, 1])
+        with col_banner:
+            render_html(f"""
+            <div style="background: rgba(255, 122, 0, 0.12); border: 1px solid #FF7A00; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px;">
+                <strong style="color: #FF7A00;">👑 Admin Impersonation Active:</strong> Currently inspecting portal as <strong style="color: #FFFFFF;">{st.session_state.user['name']}</strong> ({st.session_state.user['title']}). Team members cannot access this switcher.
+            </div>
+            """)
+        with col_ret:
+            if st.button("⬅️ Return to Rajat", key="top_revert_admin_btn", type="primary", use_container_width=True):
+                orig = st.session_state.pop("admin_original_user")
+                login_user(orig)
+                st.rerun()
 
     view = st.session_state.current_view
     if view == "Dashboard & Leaderboard":
