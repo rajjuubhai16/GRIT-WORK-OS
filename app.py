@@ -1815,6 +1815,33 @@ def create_new_user(username: str, name: str, role: str, title: str, password: s
         conn.close()
         return False, "Username already exists."
 
+def purge_all_activity_data():
+    """Purges all activity records (sessions, checkouts, tasks, logs) keeping users and credentials intact."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    tables = [
+        "work_sessions", "daily_checkouts", "tasks", "task_timer_sessions",
+        "learning_logs", "skill_roadmap_progress", "custom_skill_tracks",
+        "academic_queries", "academic_answers", "personal_growth_goals"
+    ]
+    for t in tables:
+        try:
+            c.execute(f"DELETE FROM {t}")
+        except Exception:
+            pass
+    try:
+        c.execute("""
+            DELETE FROM sqlite_sequence 
+            WHERE name IN ('work_sessions', 'daily_checkouts', 'tasks', 'task_timer_sessions', 
+                           'learning_logs', 'skill_roadmap_progress', 'custom_skill_tracks', 
+                           'academic_queries', 'academic_answers', 'personal_growth_goals')
+        """)
+    except Exception:
+        pass
+    conn.commit()
+    conn.close()
+    return True
+
 # -----------------------------------------------------------------------------
 # Custom Styling: Dark Cyber Luxury Design System
 # -----------------------------------------------------------------------------
@@ -4421,6 +4448,17 @@ def render_admin_view():
             </div>
         </div>
         """)
+
+        render_html("<hr style='border:0; border-top:1px solid #1E2330; margin:20px 0;'>")
+        st.markdown("### 🧹 Purge Test & Demo Activity Records")
+        st.markdown("<p style='color:#94A3B8; font-size:0.85rem;'>Permanently cleans test sessions, test checkouts, test tasks, and roadmap marks. <strong>Keeps all 7 registered team members and credentials 100% intact.</strong></p>", unsafe_allow_html=True)
+
+        with st.expander("⚠️ Purge All Activity Data (Fresh Zero State)"):
+            st.warning("This will clear work sessions, standup checkouts, tasks, and roadmaps back to a clean slate.")
+            if st.button("Confirm: Reset Activity Data to Fresh Zero State", key="purge_activity_btn", type="primary"):
+                purge_all_activity_data()
+                st.success("All test activity records cleared! Database is now fresh and clean.")
+                st.rerun()
 
 # -----------------------------------------------------------------------------
 # Main Application Entrypoint
