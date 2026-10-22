@@ -5,3 +5,18 @@ __pycache__/
 env/
 .env
 .DS_Store
+
+# SQLite live databases & locks (Never overwrite via git commits or pulls)
+grit_portal.db
+grit_portal.db-wal
+grit_portal.db-shm
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+test_grit_portal.db
+
+# Auto Backups directory & Scratch
+backups/
+scratch/

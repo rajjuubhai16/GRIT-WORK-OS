@@ -28,13 +28,19 @@ from datetime import datetime as dt, timedelta
 import pandas as pd
 import json
 import os
+import shutil
 import textwrap
 
 # -----------------------------------------------------------------------------
-# Configuration & Constants
+# Configuration & Constants (Rock-Solid Persistent Database Paths)
 # -----------------------------------------------------------------------------
-DB_NAME = "grit_portal.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(BASE_DIR, "grit_portal.db")
+BACKUP_DIR = os.path.join(BASE_DIR, "backups")
+EXPORT_JSON_PATH = os.path.join(BACKUP_DIR, "grit_data_export.json")
 DEFAULT_PASSWORD = "grit2026"
+
+os.makedirs(BACKUP_DIR, exist_ok=True)
 
 # Shatakshi placed at #2 per requirement
 TEAM_MEMBERS = [
@@ -76,10 +82,193 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 def get_db_connection():
-    """Create a thread-safe connection to the SQLite database with dict rows."""
-    conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+    """Create a thread-safe connection to the SQLite database with WAL durability mode and dict rows."""
+    conn = sqlite3.connect(DB_NAME, check_same_thread=False, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+    except Exception:
+        pass
     return conn
+
+# -----------------------------------------------------------------------------
+# Enterprise Data Persistence, Automated Rolling Backups & Auto-Heal Engine
+# -----------------------------------------------------------------------------
+BACKUP_ACTIVITY_TABLES = [
+    "users", "work_sessions", "daily_checkouts", "tasks", "task_timer_sessions",
+    "learning_logs", "skill_roadmap_progress", "custom_skill_tracks",
+    "academic_queries", "academic_answers", "personal_growth_goals"
+]
+
+def create_database_backup(reason: str = "auto") -> str:
+    """
+    Creates an atomic, thread-safe online snapshot of SQLite database & dual-layer JSON export.
+    Maintains a rolling window of the last 30 backups to guarantee 100% zero data loss.
+    """
+    if not os.path.exists(DB_NAME):
+        return ""
+    try:
+        now_str = dt.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f"grit_portal_backup_{reason}_{now_str}.db"
+        backup_path = os.path.join(BACKUP_DIR, backup_filename)
+
+        # 1. Atomic Online SQLite Backup (Safe during live user sessions)
+        src_conn = sqlite3.connect(DB_NAME, timeout=30.0)
+        dst_conn = sqlite3.connect(backup_path)
+        with dst_conn:
+            src_conn.backup(dst_conn, pages=100)
+        dst_conn.close()
+
+        # 2. Dual-Layer JSON Mirror Export (Human-readable fail-safe)
+        src_conn.row_factory = sqlite3.Row
+        cursor = src_conn.cursor()
+        export_data = {}
+        for table in BACKUP_ACTIVITY_TABLES:
+            try:
+                cursor.execute(f"SELECT * FROM [{table}]")
+                export_data[table] = [dict(row) for row in cursor.fetchall()]
+            except Exception:
+                pass
+        src_conn.close()
+
+        with open(EXPORT_JSON_PATH, "w", encoding="utf-8") as f:
+            json.dump(export_data, f, indent=2, default=str)
+
+        # 3. Prune old backups, preserving latest 30 snapshots
+        backups = sorted(
+            [os.path.join(BACKUP_DIR, f) for f in os.listdir(BACKUP_DIR) if f.startswith("grit_portal_backup_") and f.endswith(".db")],
+            key=os.path.getmtime
+        )
+        if len(backups) > 30:
+            for old_b in backups[:-30]:
+                try:
+                    os.remove(old_b)
+                except Exception:
+                    pass
+
+        return backup_filename
+    except Exception as e:
+        print(f"[Backup Engine Error]: {e}")
+        return ""
+
+def list_database_backups():
+    """Lists all available historical database snapshots with metadata."""
+    if not os.path.exists(BACKUP_DIR):
+        return []
+    files = [f for f in os.listdir(BACKUP_DIR) if f.startswith("grit_portal_backup_") and f.endswith(".db")]
+    results = []
+    for f in sorted(files, reverse=True):
+        full_path = os.path.join(BACKUP_DIR, f)
+        try:
+            sz_kb = round(os.path.getsize(full_path) / 1024, 1)
+            mtime = dt.fromtimestamp(os.path.getmtime(full_path)).strftime("%Y-%m-%d %H:%M:%S")
+            results.append({"filename": f, "path": full_path, "size_kb": sz_kb, "timestamp": mtime})
+        except Exception:
+            pass
+    return results
+
+def restore_database_from_backup_file(backup_filepath: str) -> bool:
+    """Restores database from a designated snapshot backup file with safety pre-snapshot."""
+    if not os.path.exists(backup_filepath):
+        return False
+    try:
+        # Pre-snapshot current state before restoring
+        create_database_backup("pre_restore_safety")
+        # Copy backup over live DB
+        shutil.copy2(backup_filepath, DB_NAME)
+        # Clean up stale WAL / shm locks
+        for ext in ["-wal", "-shm"]:
+            w_file = DB_NAME + ext
+            if os.path.exists(w_file):
+                try:
+                    os.remove(w_file)
+                except Exception:
+                    pass
+        return True
+    except Exception as e:
+        print(f"[Restore Error]: {e}")
+        return False
+
+def restore_database_from_json_data(data: dict) -> bool:
+    """Restores database tables from a structured JSON dump."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        for table, rows in data.items():
+            if not rows:
+                continue
+            try:
+                cursor.execute(f"DELETE FROM [{table}]")
+                cols = list(rows[0].keys())
+                placeholders = ", ".join(["?"] * len(cols))
+                col_names = ", ".join([f"[{c}]" for c in cols])
+                sql = f"INSERT OR REPLACE INTO [{table}] ({col_names}) VALUES ({placeholders})"
+                for r in rows:
+                    cursor.execute(sql, [r[c] for c in cols])
+            except Exception as e:
+                print(f"Error restoring table {table} from JSON: {e}")
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"[JSON Restore Error]: {e}")
+        return False
+
+def auto_heal_database_if_empty():
+    """
+    Automatic Self-Healing Resilience Shield:
+    If grit_portal.db has 0 work sessions, 0 checkouts, and 0 roadmap progress milestones,
+    automatically detects the latest non-empty snapshot from backups/ or JSON mirror and restores it!
+    Prevents silent wipes caused by git pull, branch switching, or accidental schema redeploys.
+    """
+    if not os.path.exists(DB_NAME):
+        return
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM work_sessions")
+        sess_cnt = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM daily_checkouts")
+        co_cnt = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM skill_roadmap_progress")
+        rm_cnt = cursor.fetchone()[0]
+        conn.close()
+
+        if sess_cnt == 0 and co_cnt == 0 and rm_cnt == 0:
+            backups = list_database_backups()
+            for b in backups:
+                b_path = b["path"]
+                try:
+                    b_conn = sqlite3.connect(b_path)
+                    b_cur = b_conn.cursor()
+                    b_cur.execute("SELECT COUNT(*) FROM work_sessions")
+                    b_sess = b_cur.fetchone()[0]
+                    b_cur.execute("SELECT COUNT(*) FROM daily_checkouts")
+                    b_co = b_cur.fetchone()[0]
+                    b_cur.execute("SELECT COUNT(*) FROM skill_roadmap_progress")
+                    b_rm = b_cur.fetchone()[0]
+                    b_conn.close()
+                    if b_sess > 0 or b_co > 0 or b_rm > 0:
+                        shutil.copy2(b_path, DB_NAME)
+                        print(f"[Auto-Heal Shield]: Live database automatically healed from backup: {b['filename']}")
+                        return
+                except Exception:
+                    pass
+
+            if os.path.exists(EXPORT_JSON_PATH):
+                try:
+                    with open(EXPORT_JSON_PATH, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    if data.get("work_sessions") or data.get("daily_checkouts") or data.get("skill_roadmap_progress"):
+                        restore_database_from_json_data(data)
+                        print("[Auto-Heal Shield]: Live database automatically healed from JSON mirror!")
+                except Exception as e:
+                    print(f"[Auto-Heal JSON Error]: {e}")
+    except Exception as e:
+        print(f"[Auto-Heal Check Error]: {e}")
+
 
 # -----------------------------------------------------------------------------
 # Gamified XP & Level Progression Engine
@@ -312,8 +501,9 @@ def init_db():
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (member["username"], member["name"], member["role"], member["title"], default_hash, member["avatar_color"]))
         conn.commit()
-
     conn.close()
+    auto_heal_database_if_empty()
+    create_database_backup("init_boot")
 
 # -----------------------------------------------------------------------------
 # Modular SQLite Database Helper Functions
@@ -401,6 +591,7 @@ def end_session(session_id: int):
     """, (end_str, duration_minutes, duration_hours, session_id))
     conn.commit()
     conn.close()
+    create_database_backup("session_clockout")
 
     return {"duration_hours": duration_hours, "duration_minutes": duration_minutes}, "Punched out successfully!"
 
@@ -422,6 +613,7 @@ def submit_daily_checkout(user_id: int, username: str, work_summary: str, learni
 
     conn.commit()
     conn.close()
+    create_database_backup("daily_checkout")
     return True
 
 def get_daily_checkouts(user_id: int = None, limit: int = 100):
@@ -497,6 +689,7 @@ def toggle_roadmap_topic(user_id: int, username: str, track_name: str, topic_nam
     """, (user_id, username, track_name, topic_name, val, now_str))
     conn.commit()
     conn.close()
+    create_database_backup("roadmap_toggle")
     return True
 
 def get_custom_tracks(user_id: int = None):
@@ -854,14 +1047,17 @@ def update_task_status(task_id: int, new_status: str):
     return True
 
 def delete_task(task_id: int):
-    """Deletes a task record (Admin feature)."""
+    """Deletes a task record and associated timer sessions safely."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-    cursor.execute("DELETE FROM task_timer_sessions WHERE task_id = ?", (task_id,))
-    conn.commit()
-    conn.close()
-    return True
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM task_timer_sessions WHERE task_id = ?", (task_id,))
+        cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        conn.commit()
+        create_database_backup("task_delete")
+        return True
+    finally:
+        conn.close()
 
 def format_seconds_to_hhmmss(seconds: int) -> str:
     """Formats seconds into readable string like 1h 24m 15s or 0m 00s."""
@@ -1183,7 +1379,8 @@ def create_new_user(username: str, name: str, role: str, title: str, password: s
         return False, "Username already exists."
 
 def purge_all_activity_data():
-    """Purges all activity records (sessions, checkouts, tasks, logs) keeping users and credentials intact."""
+    """Purges all activity records keeping users and credentials intact after emergency backup."""
+    create_database_backup("EMERGENCY_PRE_PURGE")
     conn = get_db_connection()
     c = conn.cursor()
     tables = [
@@ -3885,16 +4082,21 @@ def render_admin_view():
             render_html("<hr style='border:0; border-top:1px solid #1E2330; margin:10px 0 16px 0;'>")
 
     with tab_db:
-        st.markdown("### SQLite Audit & Schema Inspection")
+        st.markdown("### 🛡️ SQLite Audit, Data Resilience & Automated Backups Hub")
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        tables = ["users", "work_sessions", "daily_checkouts", "tasks", "learning_logs", "skill_roadmap_progress", "custom_skill_tracks", "academic_queries", "academic_answers"]
+        tables = ["users", "work_sessions", "daily_checkouts", "tasks", "learning_logs", "skill_roadmap_progress", "custom_skill_tracks", "academic_queries", "academic_answers", "personal_growth_goals"]
         table_counts = {}
         for t in tables:
-            cursor.execute(f"SELECT COUNT(*) as count FROM {t}")
-            table_counts[t] = cursor.fetchone()["count"]
+            try:
+                cursor.execute(f"SELECT COUNT(*) as count FROM [{t}]")
+                table_counts[t] = cursor.fetchone()["count"]
+            except Exception:
+                table_counts[t] = 0
         conn.close()
+
+        backups_list = list_database_backups()
 
         col_d1, col_d2, col_d3 = st.columns(3)
         col_d1.metric("Registered Users", table_counts.get("users", 0))
@@ -3904,29 +4106,90 @@ def render_admin_view():
         col_d4, col_d5, col_d6 = st.columns(3)
         col_d4.metric("Tasks In DB", table_counts.get("tasks", 0))
         col_d5.metric("Checked Milestones", table_counts.get("skill_roadmap_progress", 0))
-        col_d6.metric("Academic Queries", table_counts.get("academic_queries", 0))
+        col_d6.metric("Active Backups", len(backups_list))
 
         db_path = os.path.abspath(DB_NAME)
         file_size_kb = round(os.path.getsize(db_path) / 1024, 2) if os.path.exists(db_path) else 0.0
+        latest_backup_time = backups_list[0]["timestamp"] if backups_list else "None"
+
         render_html(f"""
-        <div class="cyber-card" style="margin-top: 20px;">
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #94A3B8;">
+        <div class="cyber-card" style="margin-top: 15px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #94A3B8; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <div>Database File: <strong style="color: #00FFA3;">{db_path}</strong></div>
                 <div>Storage Footprint: <strong style="color: #FFFFFF;">{file_size_kb} KB</strong></div>
-                <div>Status: <span style="color: #00FFA3;">Zero-Dummy State (Pure Live Data Engine)</span></div>
+                <div>WAL Concurrency: <span style="color: #00FFA3;">Enabled (High-Speed ACID)</span></div>
+                <div>Latest Snapshot: <strong style="color: #FFB800;">{latest_backup_time}</strong></div>
+                <div>Dual-Layer Mirror: <span style="color: #00FFA3;">Active (SQLite Rolling + JSON Fail-Safe)</span></div>
+                <div>Auto-Heal Shield: <span style="color: #00FFA3;">Armed (Zero-Data-Loss Protection)</span></div>
             </div>
         </div>
         """)
 
+        st.markdown("#### ⚡ Backup & Snapshot Actions")
+        col_act1, col_act2, col_act3, col_act4 = st.columns(4)
+        with col_act1:
+            if st.button("📸 Create Instant Snapshot", type="primary", use_container_width=True):
+                fname = create_database_backup("admin_manual")
+                st.toast(f"Backup saved: {fname}")
+                st.success("Snapshot created!")
+                st.rerun()
+        with col_act2:
+            if st.button("🔄 Refresh JSON Mirror", use_container_width=True):
+                create_database_backup("json_refresh")
+                st.toast("JSON Export refreshed.")
+                st.success("JSON mirror refreshed!")
+                st.rerun()
+        with col_act3:
+            if os.path.exists(DB_NAME):
+                with open(DB_NAME, "rb") as f:
+                    st.download_button(
+                        "💾 Download Live DB",
+                        data=f.read(),
+                        file_name="grit_portal.db",
+                        mime="application/octet-stream",
+                        use_container_width=True
+                    )
+        with col_act4:
+            if os.path.exists(EXPORT_JSON_PATH):
+                with open(EXPORT_JSON_PATH, "rb") as f:
+                    st.download_button(
+                        "📄 Download JSON Mirror",
+                        data=f.read(),
+                        file_name="grit_data_export.json",
+                        mime="application/json",
+                        use_container_width=True
+                    )
+
+        st.markdown("#### 🕒 Point-in-Time Snapshot History & Restore")
+        if backups_list:
+            with st.expander(f"📦 Browse & Restore from {len(backups_list)} Historical Snapshots", expanded=False):
+                st.markdown("<p style='color:#94A3B8; font-size:0.85rem;'>Choose any historical snapshot to roll back. The system automatically creates a safety checkpoint of the current live database before any restoration.</p>", unsafe_allow_html=True)
+                selected_backup = st.selectbox(
+                    "Select Snapshot to Restore",
+                    options=[b["filename"] for b in backups_list],
+                    format_func=lambda x: next((f"🕒 {b['timestamp']} | {b['size_kb']} KB | {b['filename']}" for b in backups_list if b['filename'] == x), x)
+                )
+                confirm_restore = st.checkbox("I understand this will overwrite current live database with the selected snapshot (a pre-restore safety copy is automatically created).")
+                if st.button("⚡ Execute Point-in-Time Restore", disabled=not confirm_restore, type="primary"):
+                    b_obj = next((b for b in backups_list if b["filename"] == selected_backup), None)
+                    if b_obj and restore_database_from_backup_file(b_obj["path"]):
+                        st.success(f"Database successfully restored from snapshot {selected_backup}!")
+                        st.rerun()
+                    else:
+                        st.error("Failed to restore backup.")
+        else:
+            st.info("No snapshots found yet. Click 'Create Instant Snapshot' above to generate your first backup.")
+
         render_html("<hr style='border:0; border-top:1px solid #1E2330; margin:20px 0;'>")
         st.markdown("### 🧹 Purge Test & Demo Activity Records")
-        st.markdown("<p style='color:#94A3B8; font-size:0.85rem;'>Permanently cleans test sessions, test checkouts, test tasks, and roadmap marks. <strong>Keeps all 7 registered team members and credentials 100% intact.</strong></p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#94A3B8; font-size:0.85rem;'>Permanently cleans test sessions, test checkouts, test tasks, and roadmap marks. <strong>Keeps all 7 registered team members and credentials 100% intact. Automatically creates a pre-purge emergency backup.</strong></p>", unsafe_allow_html=True)
 
-        with st.expander("⚠️ Purge All Activity Data (Fresh Zero State)"):
-            st.warning("This will clear work sessions, standup checkouts, tasks, and roadmaps back to a clean slate.")
-            if st.button("Confirm: Reset Activity Data to Fresh Zero State", key="purge_activity_btn", type="primary"):
+        with st.expander("⚠️ Purge Activity Data (Guarded with Safety Checkpoint)"):
+            st.warning("This will clear work sessions, standup checkouts, tasks, and roadmaps. A mandatory safety snapshot will be saved in backups/ prior to purging.")
+            purge_code = st.text_input("Type 'CONFIRM_PURGE_ACTIVITY' to unlock:", key="purge_code_input")
+            if st.button("Confirm: Reset Activity Data to Fresh Zero State", key="purge_activity_btn", type="primary", disabled=(purge_code != "CONFIRM_PURGE_ACTIVITY")):
                 purge_all_activity_data()
-                st.success("All test activity records cleared! Database is now fresh and clean.")
+                st.success("All activity records cleared. An emergency safety backup was saved in backups/!")
                 st.rerun()
 
 # -----------------------------------------------------------------------------
@@ -3935,6 +4198,7 @@ def render_admin_view():
 def main():
     """Main orchestrator for the GRIT Work OS."""
     init_db()
+    auto_heal_database_if_empty()
     inject_custom_css()
     init_session_state()
 

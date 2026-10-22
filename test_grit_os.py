@@ -11,6 +11,7 @@ Validates:
 """
 
 import os
+import shutil
 import unittest
 from datetime import datetime as dt, timedelta
 import app
@@ -18,21 +19,49 @@ import app
 class TestGritOS(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Use an isolated test database to protect production grit_portal.db
-        app.DB_NAME = "test_grit_portal.db"
-        if os.path.exists("test_grit_portal.db"):
-            os.remove("test_grit_portal.db")
+        # Save original production database path and backup directory
+        cls.orig_db_name = app.DB_NAME
+        cls.orig_backup_dir = app.BACKUP_DIR
+        cls.orig_export_json_path = app.EXPORT_JSON_PATH
+
+        cls.test_db_path = os.path.join(app.BASE_DIR, "test_grit_portal.db")
+        cls.test_backup_dir = os.path.join(app.BASE_DIR, "test_backups")
+        os.makedirs(cls.test_backup_dir, exist_ok=True)
+
+        app.DB_NAME = cls.test_db_path
+        app.BACKUP_DIR = cls.test_backup_dir
+        app.EXPORT_JSON_PATH = os.path.join(cls.test_backup_dir, "test_grit_data_export.json")
+
+        if os.path.exists(cls.test_db_path):
+            try:
+                os.remove(cls.test_db_path)
+            except Exception:
+                pass
         app.init_db()
 
     @classmethod
     def tearDownClass(cls):
-        # Clean up test database
-        if os.path.exists("test_grit_portal.db"):
+        # Clean up test database and restore production settings
+        if os.path.exists(cls.test_db_path):
             try:
-                os.remove("test_grit_portal.db")
+                os.remove(cls.test_db_path)
             except Exception:
                 pass
-        app.DB_NAME = "grit_portal.db"
+        for ext in ["-wal", "-shm"]:
+            f = cls.test_db_path + ext
+            if os.path.exists(f):
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
+        if os.path.exists(cls.test_backup_dir):
+            try:
+                shutil.rmtree(cls.test_backup_dir)
+            except Exception:
+                pass
+        app.DB_NAME = cls.orig_db_name
+        app.BACKUP_DIR = cls.orig_backup_dir
+        app.EXPORT_JSON_PATH = cls.orig_export_json_path
 
     def test_01_team_directory_order_shatakshi_at_2(self):
         """Verify all 7 team members are seeded with Shatakshi at #2."""
