@@ -47,643 +47,10 @@ TEAM_MEMBERS = [
     {"username": "Sainu", "name": "Sainu", "role": "member", "title": "QA & User Experience", "avatar_color": "#38BDF8"}
 ]
 
-# Comprehensive Technical Roadmaps & Curricula Catalog
-ROADMAP_CATALOG = {
-    "AI Engineering & Generative AI Systems": {
-        "icon": "🤖",
-        "category": "AI & Machine Learning",
-        "difficulty": "Intermediate to Advanced",
-        "duration": "10-14 Weeks",
-        "summary": "Master state-of-the-art LLM application development, RAG architectures, prompt engineering, vector databases, and autonomous multi-agent systems.",
-        "phases": {
-            "Phase 1: LLM Foundations & Prompt Engineering": [
-                "Prompt Engineering, System Prompts & Few-Shot In-Context Learning",
-                "Structured JSON Outputs, Schema Validation & Pydantic Schemas"
-            ],
-            "Phase 2: Vector Search & Retrieval Augmented Generation": [
-                "Embeddings, Vector Databases (ChromaDB, Pinecone, Qdrant) & Cosine Distance",
-                "Retrieval-Augmented Generation (RAG): Chunking, Hybrid Search & Reranking"
-            ],
-            "Phase 3: Autonomous Agents & Production Serving": [
-                "Function Calling, Tool Orchestration & Multi-Turn Conversations",
-                "Autonomous Multi-Agent Architectures (LangGraph, CrewAI, AutoGen)",
-                "Agent Memory, Persistent State & Vector Storage Systems",
-                "LLM Evaluation, Hallucination Mitigation & Ragas Benchmarks",
-                "Fine-Tuning (PEFT/LoRA), Model Quantization (GGUF, AWQ) & vLLM Serving"
-            ]
-        },
-        "topics": [
-            "Prompt Engineering, System Prompts & Few-Shot In-Context Learning",
-            "Structured JSON Outputs, Schema Validation & Pydantic Schemas",
-            "Embeddings, Vector Databases (ChromaDB, Pinecone, Qdrant) & Cosine Distance",
-            "Retrieval-Augmented Generation (RAG): Chunking, Hybrid Search & Reranking",
-            "Function Calling, Tool Orchestration & Multi-Turn Conversations",
-            "Autonomous Multi-Agent Architectures (LangGraph, CrewAI, AutoGen)",
-            "Agent Memory, Persistent State & Vector Storage Systems",
-            "LLM Evaluation, Hallucination Mitigation & Ragas Benchmarks",
-            "Fine-Tuning (PEFT/LoRA), Model Quantization (GGUF, AWQ) & vLLM Serving"
-        ],
-        "learning_guide": {
-            "what_to_learn": "In-context learning, context windows, temperature/top-p sampling, vector similarity, dense retrieval, BM25 hybrid search, ReAct agent loops, LangGraph state graphs, vLLM inference optimization.",
-            "free_resources": [
-                {"title": "OpenAI Official Cookbooks & API Guides", "url": "https://cookbook.openai.com/"},
-                {"title": "LangChain & LangGraph Conceptual Guide", "url": "https://python.langchain.com/docs/"},
-                {"title": "Hugging Face Deep Learning & NLP Course", "url": "https://huggingface.co/learn/nlp-course/"},
-                {"title": "Anthropic Interactive Prompt Engineering Tutorial", "url": "https://docs.anthropic.com/claude/docs/prompt-engineering"}
-            ],
-            "capstone_project": "Build an Autonomous Multi-Agent Research Assistant with local vector RAG, tool calling for live data, citation grounding, and automated markdown report delivery."
-        }
-    },
-    "Machine Learning & Deep Learning": {
-        "icon": "🧠",
-        "category": "AI & Machine Learning",
-        "difficulty": "Beginner to Advanced",
-        "duration": "12-16 Weeks",
-        "summary": "Master core statistical learning, regression, classification, ensembles, PyTorch neural networks, backpropagation, and transformer architectures.",
-        "phases": {
-            "Phase 1: Mathematics & Classical ML": [
-                "Mathematics for ML: Linear Algebra, Multivariate Calculus & Probability",
-                "Supervised Learning: Regression, Classification, SVMs & Decision Trees",
-                "Ensemble Methods: Random Forests, Gradient Boosting (XGBoost, LightGBM)"
-            ],
-            "Phase 2: Unsupervised Learning & Validation": [
-                "Unsupervised Learning: K-Means, Hierarchical Clustering, PCA & t-SNE",
-                "Model Evaluation: ROC-AUC, Precision-Recall, Cross-Validation & Overfitting"
-            ],
-            "Phase 3: Deep Learning & Modern Architectures": [
-                "Neural Networks & Backpropagation from Scratch",
-                "PyTorch Fundamentals: Tensors, Autograd, Dataset Loaders & Training Loops",
-                "Computer Vision: CNN Architectures, Transfer Learning & Object Detection",
-                "Sequence Models: RNNs, LSTMs, Transformers & Self-Attention Mechanisms"
-            ]
-        },
-        "topics": [
-            "Mathematics for ML: Linear Algebra, Multivariate Calculus & Probability",
-            "Supervised Learning: Regression, Classification, SVMs & Decision Trees",
-            "Ensemble Methods: Random Forests, Gradient Boosting (XGBoost, LightGBM)",
-            "Unsupervised Learning: K-Means, Hierarchical Clustering, PCA & t-SNE",
-            "Model Evaluation: ROC-AUC, Precision-Recall, Cross-Validation & Overfitting",
-            "Neural Networks & Backpropagation from Scratch",
-            "PyTorch Fundamentals: Tensors, Autograd, Dataset Loaders & Training Loops",
-            "Computer Vision: CNN Architectures, Transfer Learning & Object Detection",
-            "Sequence Models: RNNs, LSTMs, Transformers & Self-Attention Mechanisms"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Gradient descent, loss functions, AdamW optimizer, L1/L2 regularization, dropout, convolutional filters, self-attention dot-products, multi-head attention.",
-            "free_resources": [
-                {"title": "Scikit-Learn Machine Learning Documentation", "url": "https://scikit-learn.org/stable/"},
-                {"title": "PyTorch Official 60-Minute Blitz & Tutorials", "url": "https://pytorch.org/tutorials/"},
-                {"title": "Fast.ai Practical Deep Learning for Coders", "url": "https://course.fast.ai/"},
-                {"title": "StatQuest Machine Learning Video Series (Josh Starmer)", "url": "https://statquest.org/"}
-            ],
-            "capstone_project": "Build an End-to-End Predictive Customer Churn Engine with automated feature engineering, XGBoost and PyTorch neural models, and MLflow experiment tracking."
-        }
-    },
-    "Data Science & Scientific Computing": {
-        "icon": "🔬",
-        "category": "Data & Analytics",
-        "difficulty": "Beginner to Intermediate",
-        "duration": "8-12 Weeks",
-        "summary": "Master data manipulation with Pandas, exploratory data analysis, statistical hypothesis testing, feature engineering, and scientific visualization.",
-        "phases": {
-            "Phase 1: Vectorized Computing & Data Wrangling": [
-                "NumPy Arrays, Vectorization, Broadcasting & Memory Alignment",
-                "Advanced Pandas: Indexing, GroupBy, Merging, Pivots & Vectorized String Ops"
-            ],
-            "Phase 2: EDA & Statistical Rigor": [
-                "Exploratory Data Analysis (EDA): Distribution Modeling, Outliers & Imputation",
-                "Statistical Inference: Hypothesis Testing, p-values, ANOVA & Chi-Square",
-                "Feature Engineering: Encoding, Scaling, Dimensionality Reduction & Polynomials"
-            ],
-            "Phase 3: Visualization & Time-Series": [
-                "Data Visualization: Seaborn, Matplotlib & Plotly Interactive Dashboards",
-                "Time-Series Analysis: Trends, Seasonality, Stationarity, ARIMA & Prophet",
-                "Scientific Experimentation: A/B Testing Design, Sample Sizing & Significance"
-            ]
-        },
-        "topics": [
-            "NumPy Arrays, Vectorization, Broadcasting & Memory Alignment",
-            "Advanced Pandas: Indexing, GroupBy, Merging, Pivots & Vectorized String Ops",
-            "Exploratory Data Analysis (EDA): Distribution Modeling, Outliers & Imputation",
-            "Statistical Inference: Hypothesis Testing, p-values, ANOVA & Chi-Square",
-            "Feature Engineering: Encoding, Scaling, Dimensionality Reduction & Polynomials",
-            "Data Visualization: Seaborn, Matplotlib & Plotly Interactive Dashboards",
-            "Time-Series Analysis: Trends, Seasonality, Stationarity, ARIMA & Prophet",
-            "Scientific Experimentation: A/B Testing Design, Sample Sizing & Significance"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Central Limit Theorem, hypothesis testing (t-test, chi-square), missing data imputation strategies, correlation matrices, box plots, IQR outlier detection, ARIMA parameters.",
-            "free_resources": [
-                {"title": "Python Data Science Handbook (Jake VanderPlas)", "url": "https://jakevdp.github.io/PythonDataScienceHandbook/"},
-                {"title": "Pandas Official User Guide", "url": "https://pandas.pydata.org/docs/user_guide/index.html"},
-                {"title": "Kaggle Learn Data Science Micro-Courses", "url": "https://www.kaggle.com/learn"},
-                {"title": "Plotly Python Interactive Graphing Library", "url": "https://plotly.com/python/"}
-            ],
-            "capstone_project": "Conduct an in-depth Exploratory Data Analysis & Anomaly Detection Study on a 1M+ transaction e-commerce dataset with Plotly interactive charts and statistical A/B test findings."
-        }
-    },
-    "Data Analytics & Business Intelligence": {
-        "icon": "📈",
-        "category": "Data & Analytics",
-        "difficulty": "Beginner to Intermediate",
-        "duration": "6-10 Weeks",
-        "summary": "Transform raw business data into actionable executive insights with advanced SQL, Power BI / Tableau dashboards, KPI modeling, and cohort retention analysis.",
-        "phases": {
-            "Phase 1: Business Metrics & Spreadsheet Mastery": [
-                "Business KPI Frameworks: CAC, LTV, Churn, Retention & Cohort Dynamics",
-                "Advanced Spreadsheets: PowerQuery, Array Formulas & Dynamic Lookups"
-            ],
-            "Phase 2: Analytics SQL & Modeling": [
-                "SQL for Analytics: Aggregations, Window Functions, CTEs & Subqueries",
-                "Dashboard Design Principles: Visual Hierarchy, Data Storytelling & Executive UX"
-            ],
-            "Phase 3: BI Dashboards & Automated Reporting": [
-                "Power BI / Tableau: DAX, Calculated Fields, Data Modeling & Star Schema",
-                "Product Analytics: Funnel Conversions, User Journey Tracking & Drop-off Points",
-                "Automated Reporting: Scheduled Email Reports & Alerting with Python"
-            ]
-        },
-        "topics": [
-            "Business KPI Frameworks: CAC, LTV, Churn, Retention & Cohort Dynamics",
-            "Advanced Spreadsheets: PowerQuery, Array Formulas & Dynamic Lookups",
-            "SQL for Analytics: Aggregations, Window Functions, CTEs & Subqueries",
-            "Dashboard Design Principles: Visual Hierarchy, Data Storytelling & Executive UX",
-            "Power BI / Tableau: DAX, Calculated Fields, Data Modeling & Star Schema",
-            "Product Analytics: Funnel Conversions, User Journey Tracking & Drop-off Points",
-            "Automated Reporting: Scheduled Email Reports & Alerting with Python"
-        ],
-        "learning_guide": {
-            "what_to_learn": "North Star metrics, cohort retention matrices, customer lifetime value calculation, star schemas, dimensional modeling (facts vs dimensions), DAX measures.",
-            "free_resources": [
-                {"title": "Mode Analytics SQL & Business Analytics Tutorial", "url": "https://mode.com/sql-tutorial/"},
-                {"title": "Microsoft Power BI Guided Learning & Documentation", "url": "https://learn.microsoft.com/en-us/power-bi/"},
-                {"title": "Tableau Public Community & Tutorials", "url": "https://public.tableau.com/app/resources/learn"},
-                {"title": "Google Analytics 4 Skillshop Certification", "url": "https://skillshop.exceedlms.com/"}
-            ],
-            "capstone_project": "Build an Executive SaaS Revenue Operations & Retention Dashboard featuring real-time MRR, cohort retention heatmaps, customer acquisition channel attribution, and automated PDF export."
-        }
-    },
-    "SQL Mastery & Database Architecture": {
-        "icon": "🗄️",
-        "category": "Data & Analytics",
-        "difficulty": "Beginner to Advanced",
-        "duration": "6-8 Weeks",
-        "summary": "Master relational database design, query optimization, execution plans, window functions, indexing strategies, transactions, and SQLite/PostgreSQL architecture.",
-        "phases": {
-            "Phase 1: Relational Foundations & Queries": [
-                "Relational Database Fundamentals, Normalization (1NF to 3NF) & ACID Guarantees",
-                "Core DDL/DML: Filtering, Complex Joins, Unions & Aggregations"
-            ],
-            "Phase 2: Advanced SQL & Analytical Queries": [
-                "Advanced SQL: Window Functions (ROW_NUMBER, RANK, DENSE_RANK, LAG/LEAD)",
-                "Common Table Expressions (CTEs), Recursive Queries & Subqueries"
-            ],
-            "Phase 3: Indexing, Performance & Architecture": [
-                "Indexing Strategies: B-Trees, Hash, Composite Indexes & Covering Indexes",
-                "Query Optimization: EXPLAIN ANALYZE, Execution Plans & Eliminating Full Scans",
-                "Transactions, Concurrency Control, Isolation Levels & Deadlock Prevention",
-                "Stored Procedures, Views, Triggers & Materialized Views",
-                "High-Performance SQLite WAL Mode & Connection Pool Tuning"
-            ]
-        },
-        "topics": [
-            "Relational Database Fundamentals, Normalization (1NF to 3NF) & ACID Guarantees",
-            "Core DDL/DML: Filtering, Complex Joins, Unions & Aggregations",
-            "Advanced SQL: Window Functions (ROW_NUMBER, RANK, DENSE_RANK, LAG/LEAD)",
-            "Common Table Expressions (CTEs), Recursive Queries & Subqueries",
-            "Indexing Strategies: B-Trees, Hash, Composite Indexes & Covering Indexes",
-            "Query Optimization: EXPLAIN ANALYZE, Execution Plans & Eliminating Full Scans",
-            "Transactions, Concurrency Control, Isolation Levels & Deadlock Prevention",
-            "Stored Procedures, Views, Triggers & Materialized Views",
-            "High-Performance SQLite WAL Mode & Connection Pool Tuning"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Relational algebra, SARGable predicates, B-Tree index structure, query cost estimation, isolation levels (Read Committed, Repeatable Read, Serializable), WAL checkpointing.",
-            "free_resources": [
-                {"title": "PostgreSQL Official Documentation & Manual", "url": "https://www.postgresql.org/docs/"},
-                {"title": "Use The Index, Luke! Database Performance Guide", "url": "https://use-the-index-luke.com/"},
-                {"title": "SQLZoo Interactive SQL Exercises", "url": "https://sqlzoo.net/"},
-                {"title": "SQLite WAL (Write-Ahead Logging) Performance Guide", "url": "https://www.sqlite.org/wal.html"}
-            ],
-            "capstone_project": "Design a High-Throughput Financial Ledger Database with 3NF normalization, optimized composite indexes, EXPLAIN-validated sub-millisecond queries, and zero-deadlock transaction isolation."
-        }
-    },
-    "Python Engineering Mastery": {
-        "icon": "🐍",
-        "category": "Software Engineering",
-        "difficulty": "Beginner to Advanced",
-        "duration": "8-12 Weeks",
-        "summary": "Master professional Python software development: modern OOP, decorators, generators, asynchronous programming, FastAPI microservices, and automated testing.",
-        "phases": {
-            "Phase 1: Language Primitives & Flow": [
-                "Variables, Memory Model & Dynamic Types",
-                "Control Flow, Loops & Comprehensions",
-                "Functions, Lambda, *args/**kwargs & Scoping"
-            ],
-            "Phase 2: Object-Oriented & Advanced Patterns": [
-                "OOP: Classes, Dunder Methods & Inheritance",
-                "Advanced: Decorators, Generators & Context Managers",
-                "File I/O, JSON Serialization & SQLite WAL Optimization"
-            ],
-            "Phase 3: Concurrency, Web & Testing": [
-                "Concurrency: AsyncIO, Threading & Multiprocessing",
-                "FastAPI & Streamlit Production Web Architecture",
-                "Automated Unit Testing (unittest / pytest) & Mocking"
-            ]
-        },
-        "topics": [
-            "Variables, Memory Model & Dynamic Types",
-            "Control Flow, Loops & Comprehensions",
-            "Functions, Lambda, *args/**kwargs & Scoping",
-            "OOP: Classes, Dunder Methods & Inheritance",
-            "Advanced: Decorators, Generators & Context Managers",
-            "File I/O, JSON Serialization & SQLite WAL Optimization",
-            "Concurrency: AsyncIO, Threading & Multiprocessing",
-            "FastAPI & Streamlit Production Web Architecture",
-            "Automated Unit Testing (unittest / pytest) & Mocking"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Python GIL, memory reference counting, MRO (Method Resolution Order), generator yields, event loop mechanics in AsyncIO, Pydantic V2 schemas, pytest fixtures and mocking.",
-            "free_resources": [
-                {"title": "Real Python In-Depth Tutorials & Paths", "url": "https://realpython.com/"},
-                {"title": "Python 3 Official Documentation & Tutorial", "url": "https://docs.python.org/3/tutorial/"},
-                {"title": "FastAPI Production Web Framework Guide", "url": "https://fastapi.tiangolo.com/"},
-                {"title": "Pytest Automated Testing Documentation", "url": "https://docs.pytest.org/"}
-            ],
-            "capstone_project": "Build a High-Performance Asynchronous Task & Worker Queue engine in Python with SQLite WAL persistence, background job workers, and automated test coverage."
-        }
-    },
-    "Full-Stack Web Development": {
-        "icon": "🌐",
-        "category": "Web & Modern Frontend",
-        "difficulty": "Beginner to Advanced",
-        "duration": "10-14 Weeks",
-        "summary": "Build modern, responsive, production-ready full-stack web applications using semantic HTML5, modern CSS, modern JavaScript/TypeScript, React/Next.js, and REST APIs.",
-        "phases": {
-            "Phase 1: Web Fundamentals & Modern JavaScript": [
-                "Semantic HTML5, DOM Tree Architecture & Accessible Web Standards",
-                "Modern CSS: Custom Properties, Flexbox, Grid & Responsive Viewports",
-                "Modern JavaScript (ES6+): Closures, Promises, Async/Await & Event Loop"
-            ],
-            "Phase 2: Frontend Frameworks & State": [
-                "Frontend Frameworks: React Components, Hooks, State & Virtual DOM",
-                "State Management: Context API, Redux Toolkit or Zustand Store",
-                "Server Communication: Fetch API, Axios, REST Endpoints & Error Handling"
-            ],
-            "Phase 3: Full-Stack Integration & Deployment": [
-                "Full-Stack Meta-Frameworks: Next.js App Router, SSR, SSG & Server Actions",
-                "Backend API Integration: Node.js/Express or Python FastAPI Endpoints",
-                "Authentication: JWT, HTTP-Only Cookies, OAuth2 & Session Security",
-                "Production Build Tools: Vite, Webpack Bundling, Environment Configs & Vercel"
-            ]
-        },
-        "topics": [
-            "Semantic HTML5, DOM Tree Architecture & Accessible Web Standards",
-            "Modern CSS: Custom Properties, Flexbox, Grid & Responsive Viewports",
-            "Modern JavaScript (ES6+): Closures, Promises, Async/Await & Event Loop",
-            "Frontend Frameworks: React Components, Hooks, State & Virtual DOM",
-            "State Management: Context API, Redux Toolkit or Zustand Store",
-            "Server Communication: Fetch API, Axios, REST Endpoints & Error Handling",
-            "Full-Stack Meta-Frameworks: Next.js App Router, SSR, SSG & Server Actions",
-            "Backend API Integration: Node.js/Express or Python FastAPI Endpoints",
-            "Authentication: JWT, HTTP-Only Cookies, OAuth2 & Session Security",
-            "Production Build Tools: Vite, Webpack Bundling, Environment Configs & Vercel"
-        ],
-        "learning_guide": {
-            "what_to_learn": "DOM manipulation, CSS box model, event bubbling, React render cycle, server-side rendering (SSR) vs static site generation (SSG), JWT auth flows, CORS headers.",
-            "free_resources": [
-                {"title": "MDN Web Docs (Mozilla Developer Network)", "url": "https://developer.mozilla.org/"},
-                {"title": "React.dev Official Documentation & Learn React", "url": "https://react.dev/learn"},
-                {"title": "Next.js Official Documentation & Learn Next.js", "url": "https://nextjs.org/learn"},
-                {"title": "The Modern JavaScript Tutorial (javascript.info)", "url": "https://javascript.info/"}
-            ],
-            "capstone_project": "Build a Full-Stack Collaborative Project Workspace with real-time UI updates, JWT authentication, dark cyber theme, and instant REST API synchronization."
-        }
-    },
-    "Modern Cyber UI/UX & Frontend": {
-        "icon": "🎨",
-        "category": "Web & Modern Frontend",
-        "difficulty": "Beginner to Intermediate",
-        "duration": "6-10 Weeks",
-        "summary": "Craft visually stunning, high-contrast cyber dark interfaces with design tokens, glassmorphism, micro-animations, component systems, and WCAG accessibility.",
-        "phases": {
-            "Phase 1: Design Tokens & Layout": [
-                "Design Tokens, Typography & Cyber Color Systems",
-                "Modern CSS: Flexbox, Grid & Container Queries"
-            ],
-            "Phase 2: Visual Polish & Micro-Interactions": [
-                "Glassmorphism, Neon Glow & Micro-Animations",
-                "Interactive Wireframing & Prototyping in Figma"
-            ],
-            "Phase 3: Design Systems & Performance": [
-                "Design System Component Reusability & States",
-                "Accessibility (WCAG 2.1) & Performance (CWV) Audits"
-            ]
-        },
-        "topics": [
-            "Design Tokens, Typography & Cyber Color Systems",
-            "Modern CSS: Flexbox, Grid & Container Queries",
-            "Glassmorphism, Neon Glow & Micro-Animations",
-            "Interactive Wireframing & Prototyping in Figma",
-            "Design System Component Reusability & States",
-            "Accessibility (WCAG 2.1) & Performance (CWV) Audits"
-        ],
-        "learning_guide": {
-            "what_to_learn": "CSS custom properties, backdrop-filter glassmorphism, CSS keyframes, cubic-bezier easing, ARIA roles, color contrast ratio (4.5:1), Core Web Vitals (LCP, INP, CLS).",
-            "free_resources": [
-                {"title": "Google Web.dev Core Web Vitals & CSS Guides", "url": "https://web.dev/"},
-                {"title": "Modern CSS Solutions (Stephanie Eckles)", "url": "https://moderncss.dev/"},
-                {"title": "Figma Design Systems & Auto-Layout Guide", "url": "https://www.figma.com/resource-library/"},
-                {"title": "A11y Project Accessibility Checklist", "url": "https://www.a11yproject.com/checklist/"}
-            ],
-            "capstone_project": "Create a Cyberpunk Glassmorphic Design System Library with 25+ reusable components, micro-animations, keyboard accessibility, and a live interactive preview."
-        }
-    },
-    "Backend & Distributed Systems Architecture": {
-        "icon": "⚙️",
-        "category": "Software Engineering",
-        "difficulty": "Intermediate to Advanced",
-        "duration": "12-16 Weeks",
-        "summary": "Architect resilient, high-throughput backend services using REST, gRPC, Redis caching, message queues, rate limiting, and distributed observability.",
-        "phases": {
-            "Phase 1: Protocols & Microservices": [
-                "HTTP/HTTPS, RESTful API Design Standards & Status Codes",
-                "gRPC, Protocol Buffers & High-Performance Microservices RPC"
-            ],
-            "Phase 2: Caching, Queues & Scaling": [
-                "Asynchronous Messaging: Message Queues, Kafka & RabbitMQ Pub/Sub",
-                "Caching Strategies: Redis In-Memory Cache, Cache-Aside & Eviction Policies",
-                "Database Scaling: Read Replicas, Connection Pooling, Sharding & Partitioning"
-            ],
-            "Phase 3: Distributed Systems & Observability": [
-                "System Design Fundamentals: Load Balancing, Rate Limiting & Circuit Breakers",
-                "Distributed Consensus, CAP Theorem, Eventual Consistency & Idempotency",
-                "Observability: Structured Logging, Prometheus Metrics, Grafana & Distributed Tracing"
-            ]
-        },
-        "topics": [
-            "HTTP/HTTPS, RESTful API Design Standards & Status Codes",
-            "gRPC, Protocol Buffers & High-Performance Microservices RPC",
-            "Asynchronous Messaging: Message Queues, Kafka & RabbitMQ Pub/Sub",
-            "Caching Strategies: Redis In-Memory Cache, Cache-Aside & Eviction Policies",
-            "Database Scaling: Read Replicas, Connection Pooling, Sharding & Partitioning",
-            "System Design Fundamentals: Load Balancing, Rate Limiting & Circuit Breakers",
-            "Distributed Consensus, CAP Theorem, Eventual Consistency & Idempotency",
-            "Observability: Structured Logging, Prometheus Metrics, Grafana & Distributed Tracing"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Cache invalidation strategies, protobuf schemas, consumer groups in Kafka, token bucket rate limiting, circuit breaker states, CAP theorem tradeoffs, OpenTelemetry tracing.",
-            "free_resources": [
-                {"title": "Designing Data-Intensive Applications (Martin Kleppmann Notes)", "url": "https://dataintensive.net/"},
-                {"title": "ByteByteGo System Design Insights & Diagrams", "url": "https://bytebytego.com/"},
-                {"title": "Redis Official Documentation & Data Types", "url": "https://redis.io/docs/"},
-                {"title": "gRPC Official Documentation & Guides", "url": "https://grpc.io/docs/"}
-            ],
-            "capstone_project": "Engineer a Scalable Distributed Notification Service featuring Redis token-bucket rate limiting, Kafka message publishing, idempotent workers, and Prometheus metrics."
-        }
-    },
-    "Cloud DevOps & Kubernetes Infrastructure": {
-        "icon": "☁️",
-        "category": "Cloud & DevOps",
-        "difficulty": "Intermediate to Advanced",
-        "duration": "8-12 Weeks",
-        "summary": "Master containerization, Kubernetes orchestration, Infrastructure as Code with Terraform, and automated zero-downtime CI/CD deployment pipelines.",
-        "phases": {
-            "Phase 1: Linux & Containers": [
-                "Linux Server Administration, Bash Scripting & SSH Hardening",
-                "Containerization: Multi-Stage Dockerfile Optimization & Image Sizing",
-                "Docker Compose: Multi-Container Local Stacks & Networking"
-            ],
-            "Phase 2: Kubernetes Orchestration": [
-                "Kubernetes Core: Pods, Deployments, Services, ConfigMaps & Secrets",
-                "Kubernetes Ingress Controllers, Resource Limits & Horizontal Pod Autoscaling"
-            ],
-            "Phase 3: IaC, CI/CD & Cloud Deployments": [
-                "Infrastructure as Code (IaC): Terraform Modules & State Management",
-                "CI/CD Automation: GitHub Actions Workflows, Automated Testing & Deployment",
-                "Cloud Architecture: AWS / GCP Core Services (Compute, S3, IAM, VPC, RDS)"
-            ]
-        },
-        "topics": [
-            "Linux Server Administration, Bash Scripting & SSH Hardening",
-            "Containerization: Multi-Stage Dockerfile Optimization & Image Sizing",
-            "Docker Compose: Multi-Container Local Stacks & Networking",
-            "Kubernetes Core: Pods, Deployments, Services, ConfigMaps & Secrets",
-            "Kubernetes Ingress Controllers, Resource Limits & Horizontal Pod Autoscaling",
-            "Infrastructure as Code (IaC): Terraform Modules & State Management",
-            "CI/CD Automation: GitHub Actions Workflows, Automated Testing & Deployment",
-            "Cloud Architecture: AWS / GCP Core Services (Compute, S3, IAM, VPC, RDS)"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Layer caching in Docker, Kubernetes controllers, replica sets, cluster DNS, Ingress routing, Terraform HCL, state locking, GitHub Actions runners, rolling updates.",
-            "free_resources": [
-                {"title": "Kubernetes Official Documentation & Interactive Tutorials", "url": "https://kubernetes.io/docs/tutorials/"},
-                {"title": "Docker Curriculum & Best Practices Guide", "url": "https://docker-curriculum.com/"},
-                {"title": "HashiCorp Terraform Tutorials & Associate Guides", "url": "https://developer.hashicorp.com/terraform/tutorials"},
-                {"title": "GitHub Actions Documentation & Starter Workflows", "url": "https://docs.github.com/en/actions"}
-            ],
-            "capstone_project": "Build an Automated GitOps CI/CD Pipeline deploying a containerized microservice to a Kubernetes cluster with zero-downtime rolling updates and automated health checks."
-        }
-    },
-    "Data Engineering & Modern ELT Pipelines": {
-        "icon": "🔄",
-        "category": "Data & Analytics",
-        "difficulty": "Intermediate to Advanced",
-        "duration": "10-14 Weeks",
-        "summary": "Build resilient big data architectures using modern data warehouses, dbt SQL transformations, Apache Airflow workflow orchestration, and Apache Spark / Kafka pipelines.",
-        "phases": {
-            "Phase 1: Warehousing & Modeling": [
-                "Data Modeling for Warehouses: Star Schema, Snowflake, Kimball Methodology",
-                "Modern Data Stack: Data Lakes vs Cloud Data Warehouses (Snowflake, BigQuery)"
-            ],
-            "Phase 2: ELT Transformations & Orchestration": [
-                "ELT Transformations: dbt (Data Build Tool) Models, Tests & Documentation",
-                "Workflow Orchestration: Apache Airflow DAGs, Scheduling & Sensors"
-            ],
-            "Phase 3: Distributed Data & Governance": [
-                "Batch vs Stream Processing: Apache Spark Fundamentals & PySpark",
-                "Distributed Streaming: Kafka Producers, Consumers & Event Streaming",
-                "Data Quality & Governance: Schema Evolution, Great Expectations & Lineage"
-            ]
-        },
-        "topics": [
-            "Data Modeling for Warehouses: Star Schema, Snowflake, Kimball Methodology",
-            "Modern Data Stack: Data Lakes vs Cloud Data Warehouses (Snowflake, BigQuery)",
-            "ELT Transformations: dbt (Data Build Tool) Models, Tests & Documentation",
-            "Workflow Orchestration: Apache Airflow DAGs, Scheduling & Sensors",
-            "Batch vs Stream Processing: Apache Spark Fundamentals & PySpark",
-            "Distributed Streaming: Kafka Producers, Consumers & Event Streaming",
-            "Data Quality & Governance: Schema Evolution, Great Expectations & Lineage"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Slowly changing dimensions (SCD 1/2), dbt ref macros, incremental models, Airflow DAG operators and task execution graphs, PySpark DataFrames, Kafka consumer offsets.",
-            "free_resources": [
-                {"title": "dbt Official Documentation & Fundamentals Course", "url": "https://docs.getdbt.com/"},
-                {"title": "Apache Airflow Documentation & Architecture", "url": "https://airflow.apache.org/docs/"},
-                {"title": "Apache Spark Official Quick Start & PySpark Guides", "url": "https://spark.apache.org/docs/latest/quick-start.html"},
-                {"title": "Confluent Kafka Fundamentals & Stream Processing", "url": "https://developer.confluent.io/"}
-            ],
-            "capstone_project": "Design an Automated End-to-End ELT Pipeline consuming raw event streams, executing dbt incremental transformations into a dimensional warehouse, and orchestrating via Airflow."
-        }
-    },
-    "Cybersecurity & Ethical Defense": {
-        "icon": "🛡️",
-        "category": "Cybersecurity",
-        "difficulty": "Beginner to Advanced",
-        "duration": "8-12 Weeks",
-        "summary": "Master security fundamentals, network packet analysis, OWASP Top 10 web vulnerabilities, cryptography, identity management, and defensive engineering.",
-        "phases": {
-            "Phase 1: Security Fundamentals & Networking": [
-                "Information Security Foundations: CIA Triad, Threat Modeling & Risk Assessment",
-                "Network Security: TCP/IP Stack, Packet Analysis with Wireshark, DNS & Firewalls"
-            ],
-            "Phase 2: Web Application Security & Cryptography": [
-                "Web Application Security: OWASP Top 10 (SQLi, XSS, CSRF, SSRF, IDOR)",
-                "Cryptography: Symmetric (AES), Asymmetric (RSA), Hashing (SHA-256) & SSL/TLS"
-            ],
-            "Phase 3: Identity, Defense & Auditing": [
-                "Identity & Access Management (IAM): OAuth 2.0, OpenID Connect & MFA Architecture",
-                "Penetration Testing Basics: Reconnaissance, Port Scanning (Nmap) & Vulnerability Scans",
-                "Secure Coding Standards, Dependency Auditing & Software Bill of Materials (SBOM)"
-            ]
-        },
-        "topics": [
-            "Information Security Foundations: CIA Triad, Threat Modeling & Risk Assessment",
-            "Network Security: TCP/IP Stack, Packet Analysis with Wireshark, DNS & Firewalls",
-            "Web Application Security: OWASP Top 10 (SQLi, XSS, CSRF, SSRF, IDOR)",
-            "Cryptography: Symmetric (AES), Asymmetric (RSA), Hashing (SHA-256) & SSL/TLS",
-            "Identity & Access Management (IAM): OAuth 2.0, OpenID Connect & MFA Architecture",
-            "Penetration Testing Basics: Reconnaissance, Port Scanning (Nmap) & Vulnerability Scans",
-            "Secure Coding Standards, Dependency Auditing & Software Bill of Materials (SBOM)"
-        ],
-        "learning_guide": {
-            "what_to_learn": "SQL injection vectors, Cross-Site Scripting (Reflected/Stored/DOM), CSRF tokens, Content Security Policy (CSP), TLS handshake, password salting, least privilege IAM.",
-            "free_resources": [
-                {"title": "PortSwigger Web Security Academy (Free Interactive Labs)", "url": "https://portswigger.net/web-security"},
-                {"title": "OWASP Top Ten Web Application Security Risks", "url": "https://owasp.org/www-project-top-ten/"},
-                {"title": "TryHackMe Pre-Security & Complete Beginner Paths", "url": "https://tryhackme.com/"},
-                {"title": "NIST Cybersecurity Framework Documentation", "url": "https://www.nist.gov/cyberframework"}
-            ],
-            "capstone_project": "Perform a Comprehensive Security Vulnerability Audit on a multi-tenant web application, exploiting and remediating OWASP Top 10 flaws, followed by a formal security report."
-        }
-    },
-    "Mobile App Development (Flutter & React Native)": {
-        "icon": "📱",
-        "category": "Mobile Engineering",
-        "difficulty": "Beginner to Intermediate",
-        "duration": "10-14 Weeks",
-        "summary": "Build high-performance cross-platform iOS and Android apps with reactive widget architectures, local SQLite/Hive persistence, REST API sync, and app store deployment.",
-        "phases": {
-            "Phase 1: Cross-Platform Primitives": [
-                "Cross-Platform Architecture: Flutter Engine vs React Native Bridge / Fabric",
-                "Dart Programming Essentials: Sound Null Safety, Streams & Async Programming",
-                "Flutter Widget Tree: Stateless, Stateful, Layouts & Material/Cupertino"
-            ],
-            "Phase 2: State Management & Device Integration": [
-                "State Management: Riverpod, Bloc or Provider Architecture",
-                "Mobile Networking: HTTP REST Integration, Offline Caching & SQLite/Hive",
-                "Native Device Features: Camera, Geolocation, Push Notifications & Biometrics"
-            ],
-            "Phase 3: Polished UX & App Store Publishing": [
-                "Responsive Mobile UI: Multi-Screen Support, Tablets, Dark/Light Mode",
-                "App Store & Play Store Deployment: Code Signing, Fastlane & Release Pipelines"
-            ]
-        },
-        "topics": [
-            "Cross-Platform Architecture: Flutter Engine vs React Native Bridge / Fabric",
-            "Dart Programming Essentials: Sound Null Safety, Streams & Async Programming",
-            "Flutter Widget Tree: Stateless, Stateful, Layouts & Material/Cupertino",
-            "State Management: Riverpod, Bloc or Provider Architecture",
-            "Mobile Networking: HTTP REST Integration, Offline Caching & SQLite/Hive",
-            "Native Device Features: Camera, Geolocation, Push Notifications & Biometrics",
-            "Responsive Mobile UI: Multi-Screen Support, Tablets, Dark/Light Mode",
-            "App Store & Play Store Deployment: Code Signing, Fastlane & Release Pipelines"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Flutter widget lifecycle, setState vs reactive streams, immutable state, layout constraints (tight vs loose), offline-first data synchronization, Android/iOS permission handling.",
-            "free_resources": [
-                {"title": "Flutter Official Documentation & Codelabs", "url": "https://docs.flutter.dev/"},
-                {"title": "Dart Language Tour & Interactive Sandbox", "url": "https://dart.dev/guides/language/language-tour"},
-                {"title": "Reso Coder Flutter Clean Architecture Tutorials", "url": "https://resocoder.com/"},
-                {"title": "React Native Official Getting Started Guides", "url": "https://reactnative.dev/docs/getting-started"}
-            ],
-            "capstone_project": "Build a Cross-Platform Mobile Productivity & Focus App featuring offline SQLite caching, biometric authentication, push notifications, and adaptive dark cyber styling."
-        }
-    },
-    "AI Agents & Intelligent Systems": {
-        "icon": "⚡",
-        "category": "AI & Machine Learning",
-        "difficulty": "Intermediate to Advanced",
-        "duration": "6-10 Weeks",
-        "summary": "Architect autonomous agents with structured tool calling, dynamic routing, conversational memory, guardrails, and latency optimization.",
-        "phases": {
-            "Phase 1: Structured Outputs & Retrieval": [
-                "Prompt Engineering & Structured JSON Output Schemas",
-                "Vector Embeddings, Similarity Search & RAG Architecture"
-            ],
-            "Phase 2: Autonomous Tool Calling & Routing": [
-                "Autonomous Multi-Agent Routing & Tool Calling",
-                "Agent Memory, State Management & Guardrails"
-            ],
-            "Phase 3: Production Benchmarking": [
-                "Model Benchmarking, Cost & Latency Optimization"
-            ]
-        },
-        "topics": [
-            "Prompt Engineering & Structured JSON Output Schemas",
-            "Vector Embeddings, Similarity Search & RAG Architecture",
-            "Autonomous Multi-Agent Routing & Tool Calling",
-            "Agent Memory, State Management & Guardrails",
-            "Model Benchmarking, Cost & Latency Optimization"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Autonomous reasoning loops, tool declaration schemas, function execution interception, state checkpointing, token cost budgeting, guardrail validators.",
-            "free_resources": [
-                {"title": "OpenAI Function Calling & Agent Documentation", "url": "https://platform.openai.com/docs/guides/function-calling"},
-                {"title": "LangChain Agent Concepts & Tutorials", "url": "https://python.langchain.com/docs/modules/agents/"},
-                {"title": "Google Antigravity SDK & Agentic Coding Patterns", "url": "https://ai.google.dev/"}
-            ],
-            "capstone_project": "Build an Autonomous Incident Response Agent that detects server errors from logs, calls diagnostic tools, attempts remediation, and posts structured Slack updates."
-        }
-    },
-    "Product, Strategy & Client Operations": {
-        "icon": "🎯",
-        "category": "Product & Strategy",
-        "difficulty": "Beginner to Intermediate",
-        "duration": "4-6 Weeks",
-        "summary": "Master technical client discovery, value pitching, deliverable roadmapping, agile sprint cadence, standups, and production engineering checklists.",
-        "phases": {
-            "Phase 1: Client Discovery & Scoping": [
-                "Client Technical Discovery & Value Proposal Pitching",
-                "Deliverable Roadmapping & Milestone Breakdown"
-            ],
-            "Phase 2: Agile Cadence & Engineering Standards": [
-                "Agile Sprint Cadence, Standups & Capacity Modeling",
-                "Code Review Standards & Production Readiness Checklists"
-            ]
-        },
-        "topics": [
-            "Client Technical Discovery & Value Proposal Pitching",
-            "Deliverable Roadmapping & Milestone Breakdown",
-            "Agile Sprint Cadence, Standups & Capacity Modeling",
-            "Code Review Standards & Production Readiness Checklists"
-        ],
-        "learning_guide": {
-            "what_to_learn": "Client discovery questioning frameworks, value proposition design, sprint capacity modeling, story point estimation, pull request review checklists, definition of done (DoD).",
-            "free_resources": [
-                {"title": "Atlassian Agile Coach & Sprint Planning Guide", "url": "https://www.atlassian.com/agile"},
-                {"title": "Google Project Management & Scrum Frameworks", "url": "https://grow.google/certificates/project-management/"},
-                {"title": "Silicon Valley Product Group (Marty Cagan Articles)", "url": "https://www.svpg.com/articles/"}
-            ],
-            "capstone_project": "Prepare an Executive Technical Proposal and Sprint Capacity Plan for an enterprise client, including architecture diagram, milestone Gantt chart, and review criteria."
-        }
-    }
-}
-
-# Derived mapping of track_name -> list of topic strings for backwards compatibility and database queries
-BUILTIN_ROADMAPS = {
-    track: catalog_data["topics"] for track, catalog_data in ROADMAP_CATALOG.items()
-}
+# -----------------------------------------------------------------------------
+# Comprehensive Technical Roadmaps & Curricula Catalog (Official 17 Engineering Careers)
+# -----------------------------------------------------------------------------
+from roadmaps_data import ROADMAP_CATALOG, BUILTIN_ROADMAPS
 
 # Set page configuration at top level
 st.set_page_config(
@@ -2174,18 +1541,28 @@ def logout_user():
 # -----------------------------------------------------------------------------
 def render_login_view():
     """Renders the cyber luxury login portal with secure member authentication."""
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 2.4, 1])
 
     with col2:
         render_html("""
-        <div style="text-align: center; margin-top: 40px; margin-bottom: 30px;">
-            <div style="display: inline-block; padding: 10px 18px; border-radius: 50px; background: rgba(0, 255, 163, 0.1); border: 1px solid rgba(0, 255, 163, 0.3); color: #00FFA3; font-weight: 700; font-size: 0.85rem; letter-spacing: 1.5px; margin-bottom: 16px;">
-                GRIT WORKSPACE OS
+        <div style="text-align: center; margin-top: 36px; margin-bottom: 30px;">
+            <div style="display: inline-block; padding: 8px 20px; border-radius: 50px; background: rgba(0, 255, 163, 0.08); border: 1px solid rgba(0, 255, 163, 0.3); color: #00FFA3; font-weight: 800; font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase;">
+                ⚡ GRIT WORKSPACE OS
             </div>
-            <h1 style="font-size: 2.8rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                GRIT Team Growth & Work OS
-            </h1>
-            <p style="color: #64748B; font-size: 1.05rem; margin-top: 8px;">
+            
+            <div style="font-size: clamp(3.6rem, 7.5vw, 5.2rem); font-weight: 900; letter-spacing: 8px; line-height: 1.05; margin: 0 0 4px 0; background: linear-gradient(135deg, #00FFA3 0%, #00D2FF 45%, #FFFFFF 95%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 50px rgba(0,255,163,0.35);">
+                GRIT
+            </div>
+            
+            <div style="font-size: clamp(1.1rem, 2.2vw, 1.4rem); font-weight: 700; color: #E2E8F0; letter-spacing: 1.5px; margin-bottom: 16px; text-transform: uppercase; opacity: 0.95;">
+                Team Growth & Work OS
+            </div>
+
+            <div style="font-size: clamp(1.85rem, 4vw, 2.65rem); font-weight: 800; line-height: 1.25; margin: 12px 0 10px 0; background: linear-gradient(135deg, #FFFFFF 0%, #00D2FF 45%, #00FFA3 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; text-shadow: 0 4px 30px rgba(0, 210, 255, 0.35);">
+                “Stay together and grow together”
+            </div>
+
+            <p style="color: #94A3B8; font-size: 1.05rem; margin-top: 8px; margin-bottom: 22px; font-weight: 500; line-height: 1.5;">
                 High-Performance Engineering, Personal Skill Mastery & Accountability
             </p>
         </div>
@@ -2511,6 +1888,9 @@ def render_dashboard_view():
 
         render_html("""
         <div style="margin-bottom: 20px;">
+            <div style="display: inline-block; padding: 5px 14px; border-radius: 20px; background: rgba(0, 255, 163, 0.08); border: 1px solid rgba(0, 255, 163, 0.25); color: #00FFA3; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px;">
+                🤝 Stay Together and Grow Together
+            </div>
             <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 4px;">Team Standings & Leaderboard</h1>
             <p style="color: #94A3B8; font-size: 0.95rem;">Real-time performance metrics, team-wide hours, and competitive growth standings.</p>
         </div>
@@ -3245,6 +2625,83 @@ def render_personal_growth_view():
         </div>
         """)
 
+        # Personal Career Focus & Next Action Radar
+        st.markdown("#### 🎯 My Primary Career Target & Focus Radar")
+        all_career_names = list(ROADMAP_CATALOG.keys())
+        user_target_key = f"user_primary_target_{user['id']}"
+        saved_target = st.session_state.get(user_target_key, "Full-Stack Developer" if "Full-Stack Developer" in all_career_names else all_career_names[0])
+        default_target_idx = all_career_names.index(saved_target) if saved_target in all_career_names else 0
+
+        c_target1, c_target2 = st.columns([2, 1])
+        with c_target1:
+            chosen_target = st.selectbox(
+                "Pin Your Target Career Track to Focus On:",
+                all_career_names,
+                index=default_target_idx,
+                key=f"sel_target_career_{user['id']}"
+            )
+            st.session_state[user_target_key] = chosen_target
+        with c_target2:
+            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+            st.caption(f"🎯 Pinned focus career for **{user['name']}**")
+
+        target_data = ROADMAP_CATALOG.get(chosen_target, {})
+        if target_data:
+            target_topics = target_data.get("topics", [])
+            target_done = sum(1 for t in target_topics if (chosen_target, t) in completed_topics)
+            target_total = len(target_topics)
+            target_pct = int((target_done / target_total) * 100) if target_total > 0 else 0
+            target_tier = "Master" if target_pct >= 85 else ("Advanced" if target_pct >= 65 else ("Intermediate" if target_pct >= 40 else ("Foundation" if target_pct > 0 else "Getting Started")))
+            target_tier_color = "#00FFA3" if target_pct >= 85 else ("#00D2FF" if target_pct >= 65 else ("#FFB800" if target_pct >= 40 else ("#A855F7" if target_pct > 0 else "#64748B")))
+
+            render_html(f"""
+            <div class="cyber-card" style="border: 1px solid {target_tier_color}; margin-bottom: 16px; background: linear-gradient(135deg, rgba(20,23,33,0.95), rgba(10,13,19,0.98));">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Personal Pinned Track</div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+                            <span>{target_data.get('icon', '🎯')}</span>
+                            <span>{chosen_target}</span>
+                        </div>
+                        <div style="color: #94A3B8; font-size: 0.82rem; margin-top: 2px;">{target_data.get('summary', '')}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="badge" style="background: rgba(0, 210, 255, 0.15); color: {target_tier_color}; border: 1px solid {target_tier_color}; font-size: 0.85rem;">
+                            {target_tier} ({target_pct}%)
+                        </span>
+                        <div style="font-size: 0.8rem; color: #94A3B8; margin-top: 4px;">
+                            <strong style="color: #FFFFFF;">{target_done} / {target_total}</strong> milestones mastered
+                        </div>
+                    </div>
+                </div>
+                <div style="background: #0A0D13; border-radius: 6px; height: 8px; width: 100%; margin-top: 12px; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, #00D2FF, #00FFA3); height: 100%; width: {target_pct}%;"></div>
+                </div>
+            </div>
+            """)
+
+            # Immediate Next 3 Actionable Milestones
+            next_uncompleted = [t for t in target_topics if (chosen_target, t) not in completed_topics][:3]
+            if next_uncompleted:
+                st.markdown(f"**⚡ Immediate Next Milestones to Conquer in {chosen_target}:**")
+                cols_next = st.columns(len(next_uncompleted))
+                for n_idx, n_top in enumerate(next_uncompleted):
+                    with cols_next[n_idx]:
+                        render_html(f"""
+                        <div style="background: #0E1117; border: 1px solid #1E2330; border-radius: 8px; padding: 10px; margin-bottom: 6px; min-height: 85px;">
+                            <div style="color: #00D2FF; font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Target Goal #{n_idx + 1}</div>
+                            <div style="color: #FFFFFF; font-size: 0.82rem; font-weight: 600; margin-top: 4px;">{n_top}</div>
+                        </div>
+                        """)
+                        if st.button("Mark Mastered ✅", key=f"quick_master_{user['id']}_{n_idx}", help=f"Check off '{n_top}' (+100 XP)"):
+                            toggle_roadmap_topic(user["id"], user["username"], chosen_target, n_top, True)
+                            st.toast(f"Milestone Mastered! +100 XP awarded for '{n_top}'! 🚀")
+                            st.rerun()
+            else:
+                st.success(f"🎉 Outstanding achievement! You have mastered all {target_total} milestones in {chosen_target}!")
+
+        render_html("<div style='margin-top: 20px; border-top: 1px solid #1E2330; margin-bottom: 16px;'></div>")
+
         # Search and Category filter
         col_f1, col_f2 = st.columns([2, 1])
         with col_f1:
@@ -3576,15 +3033,27 @@ def render_skill_roadmaps_view():
             # Learning guide & resources ("Kahan Se Kya Lagta Hai")
             guide = track_info.get("learning_guide", {})
             if guide:
-                with st.expander("📚 Complete Learning Guide & Curated Free Resources ('Kahan Se Kya Lagta Hai')", expanded=True):
+                with st.expander("📚 Complete Learning Guide, Projects & Free Resources ('Kahan Se Kya Lagta Hai')", expanded=True):
                     if "what_to_learn" in guide:
-                        st.markdown(f"**Core Concepts to Study & Solidify:**\n\n{guide['what_to_learn']}")
-                    if "free_resources" in guide:
-                        st.markdown("**Free Curated Official Documentation & Guides:**")
-                        for res in guide["free_resources"]:
-                            st.markdown(f"- 🔗 [{res['title']}]({res['url']})")
+                        st.markdown(f"**🎯 Core Concepts to Study & Solidify:**\n\n{guide['what_to_learn']}")
+                    
+                    if "practice_tasks" in guide and guide["practice_tasks"]:
+                        st.markdown("**✍️ Hands-on Practice Tasks & Exercises:**")
+                        for pt in guide["practice_tasks"]:
+                            st.markdown(f"- 📝 {pt}")
+
                     if "capstone_project" in guide:
-                        st.markdown(f"**Recommended Capstone Proof-of-Work Project:**\n\n🚀 {guide['capstone_project']}")
+                        st.markdown(f"**🚀 Recommended Capstone Proof-of-Work Project:**\n\n{guide['capstone_project']}")
+
+                    if "free_resources" in guide and guide["free_resources"]:
+                        st.markdown("**🔗 Free Curated Official Documentation & Guided Tutorials:**")
+                        for res in guide["free_resources"]:
+                            st.markdown(f"- 📖 [{res['title']}]({res['url']})")
+
+                    if "job_checklist" in guide and guide["job_checklist"]:
+                        st.markdown("**💼 Job-Ready Checklist & Interview Prep:**")
+                        for jc in guide["job_checklist"]:
+                            st.markdown(f"- ✅ {jc}")
 
             # Phases / Milestones
             st.markdown("### 🗺️ Phased Roadmap Milestones (Click to Update Mastery)")

@@ -18,10 +18,21 @@ import app
 class TestGritOS(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Reset DB for test isolation
-        if os.path.exists("grit_portal.db"):
-            os.remove("grit_portal.db")
+        # Use an isolated test database to protect production grit_portal.db
+        app.DB_NAME = "test_grit_portal.db"
+        if os.path.exists("test_grit_portal.db"):
+            os.remove("test_grit_portal.db")
         app.init_db()
+
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up test database
+        if os.path.exists("test_grit_portal.db"):
+            try:
+                os.remove("test_grit_portal.db")
+            except Exception:
+                pass
+        app.DB_NAME = "grit_portal.db"
 
     def test_01_team_directory_order_shatakshi_at_2(self):
         """Verify all 7 team members are seeded with Shatakshi at #2."""
@@ -152,7 +163,7 @@ class TestGritOS(unittest.TestCase):
             user_id=shatakshi["id"],
             username=shatakshi["username"],
             goal_title="Master LangGraph Multi-Agent Architecture",
-            category="AI Engineering & Generative AI Systems",
+            category="AI Engineer",
             target_date="2026-11-15",
             notes="Build 2 working prototypes with citation grounding"
         )
@@ -175,27 +186,38 @@ class TestGritOS(unittest.TestCase):
         self.assertEqual(len(remaining), 0)
 
     def test_09_comprehensive_roadmap_catalog(self):
-        """Verify 15 comprehensive technical tracks with rich learning guides and metadata."""
-        self.assertGreaterEqual(len(app.ROADMAP_CATALOG), 13)
+        """Verify 17 comprehensive engineering career tracks with rich learning guides and metadata."""
+        self.assertEqual(len(app.ROADMAP_CATALOG), 17)
         
-        # Check required domains requested by user
+        # Check required career tracks
         req_keys = [
-            "AI Engineering & Generative AI Systems",
-            "Machine Learning & Deep Learning",
-            "Data Science & Scientific Computing",
-            "Data Analytics & Business Intelligence",
-            "SQL Mastery & Database Architecture",
-            "Python Engineering Mastery",
-            "Full-Stack Web Development",
-            "Modern Cyber UI/UX & Frontend"
+            "Data Analyst",
+            "Data Scientist",
+            "Data Engineer",
+            "AI Engineer",
+            "Machine Learning Engineer",
+            "Cloud Engineer",
+            "DevOps Engineer",
+            "Cybersecurity Engineer",
+            "Backend Developer",
+            "Full-Stack Developer",
+            "Frontend Developer",
+            "Mobile App Developer",
+            "Database Engineer"
         ]
         for key in req_keys:
             self.assertIn(key, app.ROADMAP_CATALOG)
             data = app.ROADMAP_CATALOG[key]
             self.assertIn("topics", data)
+            self.assertIn("phases", data)
             self.assertIn("learning_guide", data)
             self.assertIn("what_to_learn", data["learning_guide"])
+            self.assertIn("practice_tasks", data["learning_guide"])
+            self.assertIn("capstone_project", data["learning_guide"])
             self.assertIn("free_resources", data["learning_guide"])
+            self.assertIn("job_checklist", data["learning_guide"])
+            self.assertGreater(len(data["topics"]), 20)
+
     def test_10_consistency_streak_and_kudos(self):
         """Verify streak calculation, kudos incrementing, and task search filtering."""
         shatakshi = app.verify_user("Shatakshi", "grit2026")
@@ -286,7 +308,7 @@ class TestGritOS(unittest.TestCase):
             username="Rajat",
             track_name="Autonomous Agentic Systems",
             topics_list=["LangGraph Primitives", "Tool Calling", "Memory Architecture"],
-            category="AI Engineering & Generative AI Systems",
+            category="AI Engineer",
             icon="🤖",
             summary="Production grade autonomous agents",
             is_global=1
