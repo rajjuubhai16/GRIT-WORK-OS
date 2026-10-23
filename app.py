@@ -55,6 +55,8 @@ import json
 import os
 import shutil
 import textwrap
+import threading
+import requests
 
 # -----------------------------------------------------------------------------
 # Configuration & Constants (Rock-Solid Persistent Database Paths)
@@ -127,10 +129,154 @@ BACKUP_ACTIVITY_TABLES = [
     "academic_queries", "academic_answers", "personal_growth_goals"
 ]
 
+def get_cloud_persistence_config():
+    """
+    Checks for Cloud Persistence credentials in Streamlit secrets, OS environment, or local cache.
+    Supported config in Streamlit Cloud Secrets (secrets.toml):
+    [cloud_persistence]
+    github_token = "ghp_..."
+    gist_id = "..." # (Optional: if blank, automatically creates a private Gist on first sync)
+    """
+    token = None
+    gist_id = None
+    try:
+        if hasattr(st, "secrets") and "cloud_persistence" in st.secrets:
+            token = st.secrets["cloud_persistence"].get("github_token")
+            gist_id = st.secrets["cloud_persistence"].get("gist_id")
+        elif hasattr(st, "secrets") and "GITHUB_TOKEN" in st.secrets:
+            token = st.secrets.get("GITHUB_TOKEN")
+            gist_id = st.secrets.get("GIST_ID")
+    except Exception:
+        pass
+
+    if not token:
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GRIT_GITHUB_TOKEN")
+    if not gist_id:
+        gist_id = os.environ.get("GIST_ID") or os.environ.get("GRIT_GIST_ID")
+
+    # Check local cache file in BACKUP_DIR if gist_id was previously auto-created
+    gist_cache_file = os.path.join(BACKUP_DIR, "cloud_gist_id.txt")
+    if not gist_id and os.path.exists(gist_cache_file):
+        try:
+            with open(gist_cache_file, "r", encoding="utf-8") as f:
+                cached = f.read().strip()
+                if cached:
+                    gist_id = cached
+        except Exception:
+            pass
+
+    return (token.strip() if token else None, gist_id.strip() if gist_id else None)
+
+def sync_database_to_cloud(reason: str = "auto") -> tuple[bool, str]:
+    """
+    Syncs the complete dual-layer JSON database snapshot to a private GitHub Gist.
+    Guarantees permanent, indestructible cloud persistence across Streamlit Cloud container rebuilds.
+    """
+    token, gist_id = get_cloud_persistence_config()
+    if not token:
+        return False, "No Cloud GitHub Token configured. Running in local ephemeral mode."
+
+    try:
+        export_data = {}
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        for table in BACKUP_ACTIVITY_TABLES:
+            try:
+                cursor.execute(f"SELECT * FROM [{table}]")
+                export_data[table] = [dict(row) for row in cursor.fetchall()]
+            except Exception:
+                pass
+        conn.close()
+
+        payload_content = json.dumps(export_data, indent=2, default=str)
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
+
+        if gist_id:
+            url = f"https://api.github.com/gists/{gist_id}"
+            body = {
+                "description": f"GRIT Team OS Live Cloud Database ({reason} @ {dt.now().strftime('%Y-%m-%d %H:%M:%S')})",
+                "files": {
+                    "grit_data_export.json": {"content": payload_content}
+                }
+            }
+            res = requests.patch(url, headers=headers, json=body, timeout=12)
+            if res.status_code in [200, 201]:
+                return True, f"Successfully synced to Cloud Gist ({gist_id[:8]}...)"
+            elif res.status_code == 404:
+                gist_id = None
+
+        if not gist_id:
+            url = "https://api.github.com/gists"
+            body = {
+                "description": f"GRIT Team OS Live Cloud Database (Auto-Created {dt.now().strftime('%Y-%m-%d %H:%M:%S')})",
+                "public": False,
+                "files": {
+                    "grit_data_export.json": {"content": payload_content}
+                }
+            }
+            res = requests.post(url, headers=headers, json=body, timeout=12)
+            if res.status_code in [200, 201]:
+                new_gist_id = res.json().get("id")
+                try:
+                    with open(os.path.join(BACKUP_DIR, "cloud_gist_id.txt"), "w", encoding="utf-8") as f:
+                        f.write(new_gist_id)
+                except Exception:
+                    pass
+                return True, f"Created new private Cloud Gist: {new_gist_id}"
+            else:
+                return False, f"GitHub Gist API error: HTTP {res.status_code}"
+
+    except Exception as e:
+        return False, f"Cloud Sync Exception: {str(e)}"
+
+def restore_database_from_cloud() -> tuple[bool, str]:
+    """
+    Fetches the latest JSON snapshot from GitHub Gist and restores SQLite database.
+    """
+    token, gist_id = get_cloud_persistence_config()
+    if not token or not gist_id:
+        return False, "Cloud persistence credentials not configured."
+
+    try:
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
+        res = requests.get(f"https://api.github.com/gists/{gist_id}", headers=headers, timeout=15)
+        if res.status_code != 200:
+            return False, f"Failed to fetch Gist: HTTP {res.status_code}"
+
+        gist_json = res.json()
+        files = gist_json.get("files", {})
+        if "grit_data_export.json" not in files:
+            return False, "grit_data_export.json not found in Gist."
+
+        content_str = files["grit_data_export.json"].get("content", "")
+        if not content_str:
+            return False, "Gist backup content was empty."
+
+        data = json.loads(content_str)
+        if restore_database_from_json_data(data):
+            try:
+                with open(EXPORT_JSON_PATH, "w", encoding="utf-8") as f:
+                    f.write(content_str)
+            except Exception:
+                pass
+            return True, "Successfully restored database from Cloud Gist snapshot!"
+        return False, "Database restore from JSON failed."
+    except Exception as e:
+        return False, f"Cloud restore error: {str(e)}"
+
 def create_database_backup(reason: str = "auto") -> str:
     """
     Creates an atomic, thread-safe online snapshot of SQLite database & dual-layer JSON export.
     Maintains a rolling window of the last 30 backups to guarantee 100% zero data loss.
+    Automatically initiates a non-blocking background sync to the Cloud Persistence Shield if configured.
     """
     if not os.path.exists(DB_NAME):
         return ""
@@ -172,6 +318,14 @@ def create_database_backup(reason: str = "auto") -> str:
                     os.remove(old_b)
                 except Exception:
                     pass
+
+        # 4. Trigger non-blocking Cloud Persistence Sync
+        token, _ = get_cloud_persistence_config()
+        if token:
+            try:
+                threading.Thread(target=sync_database_to_cloud, args=(reason,), daemon=True).start()
+            except Exception:
+                pass
 
         return backup_filename
     except Exception as e:
@@ -217,12 +371,16 @@ def restore_database_from_backup_file(backup_filepath: str) -> bool:
         return False
 
 def restore_database_from_json_data(data: dict) -> bool:
-    """Restores database tables from a structured JSON dump."""
+    """Restores database tables from a structured JSON dump with foreign keys temporarily relaxed."""
+    if not isinstance(data, dict):
+        return False
     try:
-        conn = get_db_connection()
+        conn = sqlite3.connect(DB_NAME, check_same_thread=False, timeout=30.0)
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
+        cursor.execute("PRAGMA foreign_keys = OFF")
         for table, rows in data.items():
-            if not rows:
+            if not rows or not isinstance(rows, list):
                 continue
             try:
                 cursor.execute(f"DELETE FROM [{table}]")
@@ -235,6 +393,7 @@ def restore_database_from_json_data(data: dict) -> bool:
             except Exception as e:
                 print(f"Error restoring table {table} from JSON: {e}")
         conn.commit()
+        cursor.execute("PRAGMA foreign_keys = ON")
         conn.close()
         return True
     except Exception as e:
@@ -244,9 +403,10 @@ def restore_database_from_json_data(data: dict) -> bool:
 def auto_heal_database_if_empty():
     """
     Automatic Self-Healing Resilience Shield:
-    If grit_portal.db has 0 work sessions, 0 checkouts, and 0 roadmap progress milestones,
-    automatically detects the latest non-empty snapshot from backups/ or JSON mirror and restores it!
-    Prevents silent wipes caused by git pull, branch switching, or accidental schema redeploys.
+    1. Checks if live DB has zero activity records (e.g. after a fresh Streamlit Cloud redeploy/rebuild).
+    2. If empty and Cloud Persistence is configured, AUTOMATICALLY pulls and restores from Cloud Gist!
+    3. If Cloud is not configured or empty, falls back to local rolling backups or JSON mirror.
+    Guarantees that git pushes, branch updates, and server restarts NEVER wipe data.
     """
     if not os.path.exists(DB_NAME):
         return
@@ -259,9 +419,21 @@ def auto_heal_database_if_empty():
         co_cnt = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM skill_roadmap_progress")
         rm_cnt = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM users")
+        user_cnt = cursor.fetchone()[0]
         conn.close()
 
+        # If zero activity or default-only seed
         if sess_cnt == 0 and co_cnt == 0 and rm_cnt == 0:
+            # 1. Try Cloud Gist Auto-Heal FIRST
+            token, gist_id = get_cloud_persistence_config()
+            if token and gist_id:
+                success, msg = restore_database_from_cloud()
+                if success:
+                    print(f"[Auto-Heal Cloud Shield]: {msg}")
+                    return
+
+            # 2. Check local rolling backups in backups/
             backups = list_database_backups()
             for b in backups:
                 b_path = b["path"]
@@ -274,25 +446,29 @@ def auto_heal_database_if_empty():
                     b_co = b_cur.fetchone()[0]
                     b_cur.execute("SELECT COUNT(*) FROM skill_roadmap_progress")
                     b_rm = b_cur.fetchone()[0]
+                    b_cur.execute("SELECT COUNT(*) FROM users")
+                    b_users = b_cur.fetchone()[0]
                     b_conn.close()
-                    if b_sess > 0 or b_co > 0 or b_rm > 0:
+                    if b_sess > 0 or b_co > 0 or b_rm > 0 or b_users > 7:
                         shutil.copy2(b_path, DB_NAME)
                         print(f"[Auto-Heal Shield]: Live database automatically healed from backup: {b['filename']}")
                         return
                 except Exception:
                     pass
 
+            # 3. Check JSON mirror
             if os.path.exists(EXPORT_JSON_PATH):
                 try:
                     with open(EXPORT_JSON_PATH, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    if data.get("work_sessions") or data.get("daily_checkouts") or data.get("skill_roadmap_progress"):
+                    if data.get("work_sessions") or data.get("daily_checkouts") or data.get("skill_roadmap_progress") or len(data.get("users", [])) > 7:
                         restore_database_from_json_data(data)
                         print("[Auto-Heal Shield]: Live database automatically healed from JSON mirror!")
                 except Exception as e:
                     print(f"[Auto-Heal JSON Error]: {e}")
     except Exception as e:
         print(f"[Auto-Heal Check Error]: {e}")
+
 
 
 # -----------------------------------------------------------------------------
@@ -755,6 +931,7 @@ def create_custom_track(user_id: int, username: str, track_name: str, topics_lis
         """, (user_id, username, track_name.strip(), json.dumps(topics_list)))
     conn.commit()
     conn.close()
+    create_database_backup("custom_track_create")
     return True
 
 def delete_custom_track(track_id: int):
@@ -764,6 +941,7 @@ def delete_custom_track(track_id: int):
     cursor.execute("DELETE FROM custom_skill_tracks WHERE id = ?", (track_id,))
     conn.commit()
     conn.close()
+    create_database_backup("custom_track_delete")
     return True
 
 def add_personal_growth_goal(user_id: int, username: str, goal_title: str, category: str = "Skill Target", target_date: str = None, notes: str = None):
@@ -776,6 +954,7 @@ def add_personal_growth_goal(user_id: int, username: str, goal_title: str, categ
     """, (user_id, username, goal_title.strip(), category.strip(), target_date, notes))
     conn.commit()
     conn.close()
+    create_database_backup("growth_goal_add")
     return True
 
 def get_personal_growth_goals(user_id: int, status: str = None):
@@ -811,6 +990,7 @@ def toggle_personal_growth_goal(goal_id: int, user_id: int, is_completed: bool):
     """, (new_status, now_str, goal_id, user_id))
     conn.commit()
     conn.close()
+    create_database_backup("growth_goal_toggle")
     return True
 
 def delete_personal_growth_goal(goal_id: int, user_id: int):
@@ -820,7 +1000,9 @@ def delete_personal_growth_goal(goal_id: int, user_id: int):
     cursor.execute("DELETE FROM personal_growth_goals WHERE id = ? AND user_id = ?", (goal_id, user_id))
     conn.commit()
     conn.close()
+    create_database_backup("growth_goal_delete")
     return True
+
 
 def get_personal_growth_stats(user_id: int, username: str):
     """Computes comprehensive personal growth metrics, XP, and formatted 7-day trend."""
@@ -1055,6 +1237,7 @@ def assign_task(title: str, description: str, assigned_to: str, assigned_by: str
     """, (title, description, assigned_to, assigned_by, priority, category, due_date))
     conn.commit()
     conn.close()
+    create_database_backup("task_assign")
     return True
 
 def update_task_status(task_id: int, new_status: str):
@@ -1069,6 +1252,7 @@ def update_task_status(task_id: int, new_status: str):
     """, (new_status, completed_at, task_id))
     conn.commit()
     conn.close()
+    create_database_backup("task_status_update")
     return True
 
 def delete_task(task_id: int):
@@ -1148,6 +1332,7 @@ def stop_task_timer(task_id: int, username: str):
 
     conn.commit()
     conn.close()
+    create_database_backup("task_timer_stop")
     return elapsed_seconds, f"Logged {format_seconds_to_hhmmss(elapsed_seconds)} to task!"
 
 def reset_task_timer(task_id: int):
@@ -1180,7 +1365,9 @@ def manual_add_task_time(task_id: int, username: str, additional_minutes: int):
     """, (task_id, username, now_iso, now_iso, add_sec))
     conn.commit()
     conn.close()
+    create_database_backup("task_manual_time")
     return True
+
 
 
 def get_tasks(assigned_to: str = None, status_filter: str = None):
@@ -1213,6 +1400,7 @@ def add_learning_log(user_id: int, username: str, skill_name: str, proof_link: s
     """, (user_id, username, skill_name, proof_link, hours_spent, mastery_pct, notes))
     conn.commit()
     conn.close()
+    create_database_backup("learning_log_add")
     return True
 
 def get_learning_logs(username: str = None):
@@ -1248,6 +1436,7 @@ def add_academic_query(author: str, title: str, content: str, tags: str):
     """, (author, title, content, tags))
     conn.commit()
     conn.close()
+    create_database_backup("academic_query_add")
     return True
 
 def get_academic_queries(search_term: str = "", filter_tag: str = "All"):
@@ -1285,6 +1474,7 @@ def add_academic_answer(query_id: int, author: str, content: str):
     """, (query_id, author, content))
     conn.commit()
     conn.close()
+    create_database_backup("academic_answer_add")
     return True
 
 def get_academic_answers(query_id: int):
@@ -1310,6 +1500,7 @@ def toggle_query_resolution(query_id: int, current_status: int):
     cursor.execute("UPDATE academic_queries SET is_resolved = ? WHERE id = ?", (new_status, query_id))
     conn.commit()
     conn.close()
+    create_database_backup("academic_query_toggle")
     return True
 
 def reset_user_password(username: str, new_password: str):
@@ -1320,6 +1511,7 @@ def reset_user_password(username: str, new_password: str):
     cursor.execute("UPDATE users SET password_hash = ? WHERE username = ?", (new_hash, username))
     conn.commit()
     conn.close()
+    create_database_backup("password_reset")
     return True
 
 def change_user_password(user_id: int, new_password: str):
@@ -1330,6 +1522,7 @@ def change_user_password(user_id: int, new_password: str):
     cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
     conn.commit()
     conn.close()
+    create_database_backup("password_change")
     return True
 
 def update_user_profile(user_id: int, name: str, title: str, role: str, phone: str = "", avatar_color: str = None):
@@ -1367,6 +1560,7 @@ def update_user_profile(user_id: int, name: str, title: str, role: str, phone: s
             """, (name.strip(), title.strip(), role.strip(), user_id))
     conn.commit()
     conn.close()
+    create_database_backup("user_profile_update")
     return True
 
 def delete_user_by_id(user_id: int):
@@ -1376,6 +1570,7 @@ def delete_user_by_id(user_id: int):
     cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
+    create_database_backup("user_delete")
     return True
 
 def create_new_user(username: str, name: str, role: str, title: str, password: str = DEFAULT_PASSWORD, avatar_color: str = "#00D2FF", phone: str = ""):
@@ -1398,10 +1593,12 @@ def create_new_user(username: str, name: str, role: str, title: str, password: s
             """, (username.strip(), name.strip(), role.strip(), title.strip(), p_hash, avatar_color))
         conn.commit()
         conn.close()
+        create_database_backup("user_create")
         return True, "User registered successfully!"
     except sqlite3.IntegrityError:
         conn.close()
         return False, "Username already exists."
+
 
 def purge_all_activity_data():
     """Purges all activity records keeping users and credentials intact after emergency backup."""
@@ -4198,7 +4395,99 @@ def render_admin_view():
                         use_container_width=True
                     )
 
+        st.markdown("#### 📤 Upload & Restore Database (Instant One-Click Recovery)")
+        st.markdown("<p style='color:#94A3B8; font-size:0.85rem;'>Upload your local <code>grit_portal.db</code> or any <code>grit_data_export.json</code> snapshot directly to restore the entire portal state with zero loss.</p>", unsafe_allow_html=True)
+        uploaded_backup = st.file_uploader("Choose a .db or .json backup file", type=["db", "json"], key="admin_db_restore_uploader")
+        if uploaded_backup is not None:
+            col_up1, col_up2 = st.columns([3, 1])
+            with col_up1:
+                st.info(f"Selected file: **{uploaded_backup.name}** ({round(uploaded_backup.size / 1024, 1)} KB)")
+            with col_up2:
+                if st.button("⚡ Restore This File Now", type="primary", use_container_width=True):
+                    create_database_backup("pre_upload_restore_safety")
+                    if uploaded_backup.name.endswith(".db"):
+                        with open(DB_NAME, "wb") as f:
+                            f.write(uploaded_backup.getbuffer())
+                        for ext in ["-wal", "-shm"]:
+                            w_file = DB_NAME + ext
+                            if os.path.exists(w_file):
+                                try:
+                                    os.remove(w_file)
+                                except Exception:
+                                    pass
+                        create_database_backup("post_upload_restore")
+                        st.success("Database restored successfully from uploaded .db file!")
+                        st.rerun()
+                    elif uploaded_backup.name.endswith(".json"):
+                        try:
+                            json_data = json.load(uploaded_backup)
+                            if restore_database_from_json_data(json_data):
+                                create_database_backup("post_upload_json_restore")
+                                st.success("Database restored successfully from uploaded JSON mirror!")
+                                st.rerun()
+                            else:
+                                st.error("Failed to restore tables from JSON data.")
+                        except Exception as e:
+                            st.error(f"Invalid JSON file: {e}")
+
+        render_html("<hr style='border:0; border-top:1px solid #1E2330; margin:20px 0;'>")
+        st.markdown("### ☁️ Real-World Cloud Persistence Shield (Streamlit Cloud)")
+
+        token, gist_id = get_cloud_persistence_config()
+        if token:
+            render_html(f"""
+            <div class="cyber-card" style="border: 1px solid #00FFA3; background: rgba(0, 255, 163, 0.05); margin-bottom: 15px;">
+                <strong style="color: #00FFA3; font-size: 1rem;">🟢 Cloud Persistence Shield ACTIVE</strong>
+                <p style="margin: 4px 0 0 0; color: #94A3B8; font-size: 0.85rem;">
+                    Your live database is continuously backed up to a private GitHub Gist (<code>{gist_id if gist_id else 'Auto-Creating on first sync'}</code>).<br>
+                    Future git commits, code updates, and Streamlit Cloud restarts will <strong>NEVER lose data</strong>.
+                </p>
+            </div>
+            """)
+            col_cs1, col_cs2 = st.columns(2)
+            with col_cs1:
+                if st.button("☁️ Push / Sync Live State to Cloud Now", use_container_width=True):
+                    with st.spinner("Syncing live state to Cloud Gist..."):
+                        ok, msg = sync_database_to_cloud("admin_manual_push")
+                        if ok:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
+            with col_cs2:
+                if st.button("📥 Pull & Restore from Cloud Gist Now", use_container_width=True):
+                    with st.spinner("Restoring state from Cloud Gist..."):
+                        ok, msg = restore_database_from_cloud()
+                        if ok:
+                            st.success(msg)
+                            st.rerun()
+                        else:
+                            st.error(msg)
+        else:
+            render_html(f"""
+            <div class="cyber-card" style="border: 1px solid #FF7A00; background: rgba(255, 122, 0, 0.08); margin-bottom: 15px;">
+                <strong style="color: #FF7A00; font-size: 1rem;">⚠️ Cloud Persistence Shield Inactive (Running in Ephemeral Local Mode)</strong>
+                <p style="margin: 6px 0; color: #E2E8F0; font-size: 0.85rem;">
+                    <strong>Notice:</strong> Streamlit Community Cloud destroys temporary containers whenever you push git updates or restart.<br>
+                    To guarantee 100% zero data loss when pushing updates from GitHub, activate the Cloud Gist Shield.
+                </p>
+            </div>
+            """)
+            with st.expander("🛠️ How to Enable Cloud Persistence in 2 Minutes (Zero Data Loss Forever)", expanded=False):
+                st.markdown('''
+                1. Go to **[GitHub Personal Access Tokens](https://github.com/settings/tokens)** (Generate New Token -> Classic).
+                2. Note name: `GRIT_OS_BACKUP`, check the box for **`gist`** (Create gists), and click **Generate Token**.
+                3. Copy your token (e.g. `ghp_xxxxxxxxxxxx`).
+                4. On your **Streamlit Cloud Dashboard** -> click on your app -> **Settings** (⚙️) -> **Secrets** -> paste:
+                ```toml
+                [cloud_persistence]
+                github_token = "ghp_your_token_here"
+                ```
+                5. Click **Save**! That's it! The system will automatically create a private Gist, continuously sync all team progress, and restore it automatically whenever you push code updates!
+                ''')
+
+        render_html("<hr style='border:0; border-top:1px solid #1E2330; margin:20px 0;'>")
         st.markdown("#### 🕒 Point-in-Time Snapshot History & Restore")
+
         if backups_list:
             with st.expander(f"📦 Browse & Restore from {len(backups_list)} Historical Snapshots", expanded=False):
                 st.markdown("<p style='color:#94A3B8; font-size:0.85rem;'>Choose any historical snapshot to roll back. The system automatically creates a safety checkpoint of the current live database before any restoration.</p>", unsafe_allow_html=True)

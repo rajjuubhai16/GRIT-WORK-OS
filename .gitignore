@@ -5,6 +5,7 @@ __pycache__/
 env/
 .env
 .DS_Store
+.streamlit/secrets.toml
 
 # SQLite live databases & locks (Never overwrite via git commits or pulls)
 grit_portal.db

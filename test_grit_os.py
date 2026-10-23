@@ -352,6 +352,35 @@ class TestGritOS(unittest.TestCase):
         remaining_tracks = app.get_custom_tracks(user_id=shatakshi["id"])
         self.assertIsNone(next((t for t in remaining_tracks if t["track_name"] == "Autonomous Agentic Systems"), None))
 
+    def test_12_cloud_persistence_and_dual_layer_backup(self):
+        """Verify cloud persistence configuration parsing, backup snapshots, and JSON restore with FK safety."""
+        # 1. Config fallback check (should return None when no secret/env is present)
+        token, gist_id = app.get_cloud_persistence_config()
+        self.assertIsNone(token)
+
+        # 2. Test JSON export & restore with FK safety
+        backup_name = app.create_database_backup("test_suite_run")
+        self.assertTrue(backup_name.startswith("grit_portal_backup_"))
+        self.assertTrue(os.path.exists(app.EXPORT_JSON_PATH))
+
+        # 3. Read exported JSON and verify users table structure
+        import json
+        with open(app.EXPORT_JSON_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.assertIn("users", data)
+        self.assertGreaterEqual(len(data["users"]), 7)
+
+        # 4. Test restore_database_from_json_data
+        restore_ok = app.restore_database_from_json_data(data)
+        self.assertTrue(restore_ok)
+
+        # 5. Verify users still intact after restore
+        users = app.get_all_users()
+        self.assertGreaterEqual(len(users), 7)
+        self.assertEqual(users[0]["username"], "Rajat")
+        self.assertEqual(users[1]["username"], "Shatakshi")
+
 if __name__ == "__main__":
     unittest.main()
+
 
