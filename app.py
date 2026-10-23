@@ -189,10 +189,12 @@ def sync_database_to_cloud(reason: str = "auto") -> tuple[bool, str]:
         conn.close()
 
         payload_content = json.dumps(export_data, indent=2, default=str)
+        auth_header = f"token {token}" if not (token.startswith("Bearer ") or token.startswith("token ")) else token
         headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": auth_header,
             "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28"
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "GRIT-Work-OS-App/1.0"
         }
 
         if gist_id:
@@ -208,6 +210,13 @@ def sync_database_to_cloud(reason: str = "auto") -> tuple[bool, str]:
                 return True, f"Successfully synced to Cloud Gist ({gist_id[:8]}...)"
             elif res.status_code == 404:
                 gist_id = None
+            else:
+                err_detail = ""
+                try:
+                    err_detail = res.json().get("message", res.text[:120])
+                except Exception:
+                    err_detail = res.text[:120]
+                return False, f"GitHub Gist API error: HTTP {res.status_code} ({err_detail})"
 
         if not gist_id:
             url = "https://api.github.com/gists"
@@ -228,7 +237,12 @@ def sync_database_to_cloud(reason: str = "auto") -> tuple[bool, str]:
                     pass
                 return True, f"Created new private Cloud Gist: {new_gist_id}"
             else:
-                return False, f"GitHub Gist API error: HTTP {res.status_code}"
+                err_detail = ""
+                try:
+                    err_detail = res.json().get("message", res.text[:120])
+                except Exception:
+                    err_detail = res.text[:120]
+                return False, f"GitHub Gist API error: HTTP {res.status_code} ({err_detail})"
 
     except Exception as e:
         return False, f"Cloud Sync Exception: {str(e)}"
@@ -242,14 +256,22 @@ def restore_database_from_cloud() -> tuple[bool, str]:
         return False, "Cloud persistence credentials not configured."
 
     try:
+        auth_header = f"token {token}" if not (token.startswith("Bearer ") or token.startswith("token ")) else token
         headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": auth_header,
             "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28"
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "GRIT-Work-OS-App/1.0"
         }
         res = requests.get(f"https://api.github.com/gists/{gist_id}", headers=headers, timeout=15)
         if res.status_code != 200:
-            return False, f"Failed to fetch Gist: HTTP {res.status_code}"
+            err_detail = ""
+            try:
+                err_detail = res.json().get("message", res.text[:120])
+            except Exception:
+                err_detail = res.text[:120]
+            return False, f"Failed to fetch Gist: HTTP {res.status_code} ({err_detail})"
+
 
         gist_json = res.json()
         files = gist_json.get("files", {})
