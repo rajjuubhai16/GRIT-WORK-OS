@@ -24,7 +24,32 @@ import streamlit as st
 import sqlite3
 import hashlib
 import datetime
-from datetime import datetime as dt, timedelta
+from datetime import datetime as _orig_dt, timedelta, timezone
+
+# -----------------------------------------------------------------------------
+# Timezone Engine: Indian Standard Time (IST, UTC+5:30)
+# Guarantees accurate Indian local time on Streamlit Cloud (which runs on UTC servers)
+# -----------------------------------------------------------------------------
+IST_TIMEZONE = timezone(timedelta(hours=5, minutes=30))
+
+class dt(_orig_dt):
+    """
+    Subclass of datetime.datetime that defaults .now() to Indian Standard Time (IST, UTC+5:30)
+    as a timezone-naive datetime (matching SQLite storage and legacy operations).
+    Guarantees that Streamlit Cloud servers (UTC) always display and store accurate Indian time.
+    """
+    @classmethod
+    def now(cls, tz=None):
+        if tz is None:
+            return _orig_dt.now(timezone.utc).astimezone(IST_TIMEZONE).replace(tzinfo=None)
+        return _orig_dt.now(tz)
+
+    @classmethod
+    def fromtimestamp(cls, timestamp, tz=None):
+        if tz is None:
+            return _orig_dt.fromtimestamp(timestamp, timezone.utc).astimezone(IST_TIMEZONE).replace(tzinfo=None)
+        return _orig_dt.fromtimestamp(timestamp, tz)
+
 import pandas as pd
 import json
 import os
@@ -1847,18 +1872,23 @@ def render_sidebar():
             hours, remainder = divmod(int(elapsed.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
             elapsed_formatted = f"{hours:02d}h {minutes:02d}m {seconds:02d}s"
+            start_time_fmt = start_dt.strftime("%I:%M %p")
+            current_time_fmt = dt.now().strftime("%I:%M %p")
 
             render_html(f"""
             <div style="background: rgba(0, 255, 163, 0.08); border: 1px solid rgba(0, 255, 163, 0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                    <span class="pulse-dot"></span>
-                    <strong style="color: #00FFA3; font-size: 0.85rem;">SESSION ACTIVE</strong>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="pulse-dot"></span>
+                        <strong style="color: #00FFA3; font-size: 0.85rem;">SESSION ACTIVE</strong>
+                    </div>
+                    <span style="color: #00D2FF; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700;">🕒 {current_time_fmt} IST</span>
                 </div>
                 <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; color: #FFFFFF;">
                     {elapsed_formatted}
                 </div>
                 <div style="color: #94A3B8; font-size: 0.75rem; margin-top: 4px;">
-                    Started: {active_sess['start_time'].split(' ')[1]}
+                    Started: {start_time_fmt} IST ({active_sess['start_time'].split(' ')[0]})
                 </div>
             </div>
             """)
@@ -1867,10 +1897,12 @@ def render_sidebar():
                 st.session_state.show_checkout_modal = True
                 st.rerun()
         else:
-            render_html("""
+            current_time_fmt = dt.now().strftime("%I:%M %p")
+            render_html(f"""
             <div style="background: #141721; border: 1px solid #262730; border-radius: 10px; padding: 14px; margin-bottom: 12px;">
-                <div style="color: #00FFA3; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
-                    Start Focus Session
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #00FFA3; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Start Focus Session</span>
+                    <span style="color: #00D2FF; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700;">🕒 {current_time_fmt} IST</span>
                 </div>
             """)
 
@@ -2018,7 +2050,7 @@ def render_daily_checkout_modal():
         with col_h1:
             st.metric("Session Duration", f"{duration_hours} hrs", f"{duration_minutes} mins")
         with col_h2:
-            st.metric("Date", dt.now().strftime("%Y-%m-%d"), dt.now().strftime("%A"))
+            st.metric("Date & Time (IST)", dt.now().strftime("%d %b %Y"), dt.now().strftime("%I:%M %p IST"))
 
         initial_work = f"Delivered: {active_sess['notes']}" if active_sess.get("notes") else ""
         work_summary = st.text_area("1. What work / sprint deliverables did you complete today? *", value=initial_work, placeholder="e.g. Built SQLite concurrency harness, resolved bug in auth...", height=90)
@@ -2607,6 +2639,8 @@ def render_personal_growth_view():
             delta = dt.now() - start_dt
             hrs, rem = divmod(int(delta.total_seconds()), 3600)
             mins, secs = divmod(rem, 60)
+            start_time_fmt = start_dt.strftime("%I:%M %p, %d %b %Y")
+            current_time_fmt = dt.now().strftime("%I:%M %p")
             render_html(f"""
             <div class="session-banner-active">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
@@ -2619,7 +2653,7 @@ def render_personal_growth_view():
                             Focus: {active_sess['notes'] or 'Sprint Work & Skill Practice'}
                         </div>
                         <div style="color: #94A3B8; font-size: 0.85rem; margin-top: 2px;">
-                            Session Started: {active_sess['start_time']}
+                            Session Started: {start_time_fmt} IST &nbsp;|&nbsp; Current Time: <span style="color: #00D2FF; font-weight: 600;">{current_time_fmt} IST</span>
                         </div>
                     </div>
                     <div style="font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 700; color: #00FFA3;">
@@ -2632,10 +2666,14 @@ def render_personal_growth_view():
                 st.session_state.show_checkout_modal = True
                 st.rerun()
         else:
+            curr_time_str = dt.now().strftime("%I:%M %p, %d %b %Y")
             with st.container():
-                render_html("""
+                render_html(f"""
                 <div class="cyber-card" style="margin-bottom: 16px;">
-                    <div style="font-weight: 700; color: #FFFFFF; font-size: 1.1rem; margin-bottom: 4px;">Start Today's Focus Session</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 4px;">
+                        <div style="font-weight: 700; color: #FFFFFF; font-size: 1.1rem;">Start Today's Focus Session</div>
+                        <div style="color: #00D2FF; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 700;">🕒 Current Time: {curr_time_str} IST</div>
+                    </div>
                     <div style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 12px;">Enter your session focus or pick an assigned sprint task to begin logging hours and building your streak.</div>
                 """)
                 my_open_tasks = [t["title"] for t in get_tasks(assigned_to=user["username"]) if t["status"] != "Completed"]
