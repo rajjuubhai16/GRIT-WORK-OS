@@ -21,3 +21,11 @@ test_grit_portal.db
 # Auto Backups directory & Scratch
 backups/
 scratch/
+
+# Debug & utility scripts (one-off, not for repo)
+check_db.py
+check_backups.py
+debug_leaderboard.py
+seed_past_data.py
+create_backup.py
+add_shubham.py

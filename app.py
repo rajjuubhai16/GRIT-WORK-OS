@@ -77,7 +77,8 @@ TEAM_MEMBERS = [
     {"username": "Aniran", "name": "Aniran", "role": "member", "title": "Tech & Features Lead", "avatar_color": "#00D2FF"},
     {"username": "Bhupender", "name": "Bhupender", "role": "member", "title": "Client Relations", "avatar_color": "#FF7A00"},
     {"username": "Misty", "name": "Misty", "role": "member", "title": "Research & Growth", "avatar_color": "#D946EF"},
-    {"username": "Sainu", "name": "Sainu", "role": "member", "title": "QA & User Experience", "avatar_color": "#38BDF8"}
+    {"username": "Sainu", "name": "Sainu", "role": "member", "title": "QA & User Experience", "avatar_color": "#38BDF8"},
+    {"username": "Shubham", "name": "Shubham", "role": "member", "title": "Full-Stack Developer", "avatar_color": "#22C55E"}
 ]
 
 # -----------------------------------------------------------------------------
