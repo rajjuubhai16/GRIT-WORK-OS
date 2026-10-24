@@ -715,17 +715,17 @@ def init_db():
 
     conn.commit()
 
-    cursor.execute("SELECT COUNT(*) as count FROM users")
-    count = cursor.fetchone()["count"]
-    if count == 0:
-        default_hash = hash_password(DEFAULT_PASSWORD)
-        for member in TEAM_MEMBERS:
-            cursor.execute("""
-                INSERT INTO users (username, name, role, title, password_hash, avatar_color)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (member["username"], member["name"], member["role"], member["title"], default_hash, member["avatar_color"]))
-        conn.commit()
+    # Always sync TEAM_MEMBERS → DB: ensures new members added to code are auto-provisioned
+    # even when DB already has existing users (e.g. Streamlit Cloud redeploys)
+    default_hash = hash_password(DEFAULT_PASSWORD)
+    for member in TEAM_MEMBERS:
+        cursor.execute("""
+            INSERT OR IGNORE INTO users (username, name, role, title, password_hash, avatar_color)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (member["username"], member["name"], member["role"], member["title"], default_hash, member["avatar_color"]))
+    conn.commit()
     conn.close()
+
     auto_heal_database_if_empty()
     create_database_backup("init_boot")
 
